@@ -1,5 +1,4 @@
-(ns sieppari.core
-  (:require [alandipert.kahn :as kahn]))
+(ns sieppari.core)
 
 (defrecord Interceptor [name
                         enter
@@ -58,30 +57,37 @@
           {}
           interceptors))
 
-(defn- error-if-circular! [sorted]
-  (when-not (seq sorted)
-    (throw (ex-info "interceptors have circular dependency" {})))
-  sorted)
+(defn- post-order
+  "Put `interceptors` in post-order.
+  Can also be described as a reverse topological sort."
+  [interceptors]
+  (let [interceptors-by-name (map-by-name interceptors)]
+    (letfn [(toposort [{:keys [name depends] :as interceptor} path colors]
+              (case (name colors)
+                :white (let [[interceptors* colors]
+                             (toposort-seq (map interceptors-by-name depends)
+                                           (conj path name)
+                                           (assoc colors name :grey))]
+                         [(conj interceptors* interceptor)
+                          (assoc colors name :black)])
+                :grey (throw (ex-info "interceptors have circular dependency"
+                                      {:circular-dependency
+                                       (drop-while #(not= % name)
+                                                   (conj path name))}))
+                :black [() colors]))
 
-(defn topology-sort [interceptors]
-  (->> interceptors
-       (map (fn [{:keys [name depends]}]
-              [name depends]))
-       (into {})
-       (kahn/kahn-sort)
-       (error-if-circular!)))
+            (toposort-seq [interceptors path colors]
+              (reduce (fn [[interceptors* colors] interceptor]
+                        (let [[interceptors** colors] (toposort interceptor path colors)]
+                          [(into interceptors* interceptors**) colors]))
+                      [[] colors] interceptors))]
 
-(defn- sort-by-depends [interceptors-map]
-  (->> (concat (->> interceptors-map
-                    vals
-                    (filter :system?)
-                    topology-sort)
-               (->> interceptors-map
-                    vals
-                    (remove :system?)
-                    topology-sort))
-       (reverse)
-       (map interceptors-map)))
+      (let [initial-colors (zipmap (map :name interceptors) (repeat :white))]
+        (first (toposort-seq interceptors [] initial-colors))))))
+
+(defn- sort-by-depends [interceptors]
+  (concat (->> interceptors (filter :system?) post-order)
+          (->> interceptors (remove :system?) post-order)))
 
 (defn- append [interceptor interceptors]
   (concat interceptors [interceptor]))
