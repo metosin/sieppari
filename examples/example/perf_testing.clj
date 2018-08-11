@@ -7,8 +7,7 @@
             [io.pedestal.interceptor.chain :as p.c]))
 
 (defn make-interceptor [n]
-  {:name (keyword (str "interceptor-" n))
-   :enter identity
+  {:enter identity
    :leave identity
    :error identity})
 
@@ -28,17 +27,17 @@
       (-> {}
           (p.c/enqueue p-chain)
           (p.c/execute)))
-    ;=> Execution time mean : 74.946559 µs
+    ;=> Execution time mean : 73.930834 µs
 
     (println "sieppari execute:")
     (criterium/quick-bench
       (ses/execute s-chain {}))
-    ;=> Execution time mean : 12.419542 µs
+    ;=> Execution time mean : 14.550930 µs
 
     (println "siepari compiled:")
     (criterium/quick-bench
       (compiled {}))
-    ;=> Execution time mean : 2.484586 µs
+    ;=> Execution time mean : 2.434840 µs
     ))
 
 (comment

@@ -303,7 +303,27 @@ This library allows interceptors to declare a predicate to
 determine if the handler requires the interceptor.
 
 * TODO: add `sieppari.filtering/applies-to` example
- 
+
+## Compiled chains
+
+* TODO: add `sieppari.execute.sync-compile/compile-interceptor-chain` example
+
+# Performance
+
+_Sieppari_ aims for minimal functionality and can therefore be
+quite fast. Complete example to test performance is 
+[included](https://github.com/metosin/sieppari/blob/develop/examples/example/perf_testing.clj).
+
+The example creates a chain of 100 interceptors that have 
+`clojure.core/identity` as `:enter` and `:leave` functions and then
+executes the chain.
+
+| Executor | Execution mean time |
+| ------------- | ------------- |
+| Pedestal | 73.930834 µs |
+| sieppari.execute.sync  | 14.550930 µs |
+| sieppari.execute.sync-compile | 2.434840 µs |
+
 # Differences to Pedestal
 
 ## Manipulation of the interceptor chain
