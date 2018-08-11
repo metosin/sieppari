@@ -289,7 +289,91 @@ This library allows interceptors to declare dependant interceptors
 and it automatically orders interceptors to an order where
 interceptors are stacked in correct order.
 
-* TODO: add `sieppari.ordering/dependency-order` example
+Lets see an example with 5 interceptors, named from `:a` to `:f` that
+have some internal dependencies. Following graph shows the 
+dependencies between interceptors:
+
+![example.ordering.g1](docs/example.ordering.g1.png)
+
+Here's the code to create the interceptors:
+
+
+```clj
+(ns example.ordering
+  (:require [sieppari.core :as sc]
+            [sieppari.execute.sync :as ses]
+            [sieppari.ordering :as ordering]))
+
+; Helper to create interceptor with provided name and
+; depdendencies:
+
+(defn make-interceptor [name depends]
+  {:name name
+   :depends depends
+   :enter (fn [ctx] (println "ENTER" name) ctx)
+   :leave (fn [ctx] (println "LEAVE" name) ctx)})
+
+; Create some interceptors:
+
+(def interceptors [(make-interceptor :a nil)
+                   (make-interceptor :b #{:a})
+                   (make-interceptor :c #{:b})
+                   (make-interceptor :d #{:c :a})
+                   (make-interceptor :e #{:c :b})
+                   (make-interceptor :f #{:b :e})])
+``` 
+
+Here's the sample handler that just prints the request and
+returns the response:
+
+```clj
+(defn handler [request]
+  (println "HANDLER:" (pr-str request))
+  "world!")
+```
+
+Before we turn the interceptors to a chain, lets order them
+by the dependencies:
+
+```clj
+(def chain (-> interceptors
+               (ordering/dependency-order)
+               (ordering/append handler)
+               (sc/into-interceptors)))
+```
+
+Above we give the interceptors to `sieppari.ordering/dependency-order`.
+It sorts the interceptors to an order defined by the dependencies.
+
+Now the interceptor chain looks like this:
+
+![example.ordering.g1](docs/example.ordering.g2.png)
+
+Next we append the handler to the end of interceptors list and
+finally use `sieppari.core/into-interceptors` to process the
+chain. Now we can use the `chain` as usual:
+
+```clj
+(ses/execute chain "Hello")
+; Prints:
+;  ENTER :a
+;  ENTER :b
+;  ENTER :c
+;  ENTER :d
+;  ENTER :e
+;  ENTER :f
+;  HANDLER: "Hello"
+;  LEAVE :f
+;  LEAVE :e
+;  LEAVE :d
+;  LEAVE :c
+;  LEAVE :b
+;  LEAVE :a
+;=> "world!"
+```
+
+Ordering interceptors by the dependencies can be very helpful when
+you have many interceptors that depend on each others work.
 
 ## Applicability filtering
 
@@ -374,7 +458,7 @@ Here's an example:
 ;=> 42
 ```
 
-The performance is about 5 times better, your mileage may wary (see [Performance]).
+The performance is about 5 times better, your mileage may wary (see [Performance](Performance)).
 
 # Performance
 

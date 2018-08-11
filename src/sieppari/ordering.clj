@@ -34,3 +34,6 @@
 
       (let [initial-colors (zipmap (map :name interceptors) (repeat :white))]
         (first (toposort-seq interceptors [] initial-colors))))))
+
+(defn append [interceptor-chain handler]
+  (concat interceptor-chain [handler]))
