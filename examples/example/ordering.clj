@@ -50,7 +50,7 @@
       (sg/multidigraph)
       (sg/viz-graph
         {:layout :dot
-         :save {:filename "docs/example.ordering.g1.png" :format :png}
+         :save {:filename "docs/example.ordering.1.png" :format :png}
          }))
 
   (-> interceptors
@@ -59,7 +59,7 @@
       (sg/multidigraph)
       (sg/viz-graph
         {:layout :circo
-         :save {:filename "docs/example.ordering.g2.png" :format :png}
+         :save {:filename "docs/example.ordering.2.png" :format :png}
          }))
 
   (interceptors->graph interceptors))

@@ -293,7 +293,7 @@ Lets see an example with 5 interceptors, named from `:a` to `:f` that
 have some internal dependencies. Following graph shows the 
 dependencies between interceptors:
 
-![example.ordering.g1](docs/example.ordering.g1.png)
+![example.ordering.g1](docs/example.ordering.1.png)
 
 Here's the code to create the interceptors:
 
@@ -347,7 +347,7 @@ It sorts the interceptors to an order defined by the dependencies.
 
 Now the interceptor chain looks like this:
 
-![example.ordering.g1](docs/example.ordering.g2.png)
+![example.ordering.g1](docs/example.ordering.2.png)
 
 Next we append the handler to the end of interceptors list and
 finally use `sieppari.core/into-interceptors` to process the
