@@ -6,6 +6,24 @@
 ;; Demonstrate functionality, mainly for documentation purposes:
 ;;
 
+;; Simple interceptor, in enter update value in `[:request :in]` with `inc`:
+
+(def inc-in-interceptor
+  {:enter (fn [ctx]
+            (update-in ctx [:request :in] inc))})
+
+;; Simple handler, take `:in` from request, apply `inc`, and
+;; return an map with `:out`.
+
+(defn handler [request]
+  {:out (inc (:in request))})
+
+(def interceptor-chain (sc/into-interceptors [inc-in-interceptor
+                                              handler]))
+
+(ses/execute interceptor-chain {:in 40})
+;=> {:out 42}
+
 ;;
 ;; Simple example:
 ;;
