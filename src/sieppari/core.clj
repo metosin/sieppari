@@ -6,7 +6,6 @@
                         leave
                         error
                         applies?
-                        system?
                         depends])
 
 (def interceptor-defaults {:enter identity
@@ -69,18 +68,13 @@
               [name depends]))
        (into {})
        (kahn/kahn-sort)
-       (error-if-circular!)))
+       (error-if-circular!)
+       (reverse)))
 
 (defn- sort-by-depends [interceptors-map]
-  (->> (concat (->> interceptors-map
-                    vals
-                    (filter :system?)
-                    topology-sort)
-               (->> interceptors-map
-                    vals
-                    (remove :system?)
-                    topology-sort))
-       (reverse)
+  (->> interceptors-map
+       (vals)
+       (topology-sort)
        (map interceptors-map)))
 
 (defn- append [interceptor interceptors]
