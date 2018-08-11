@@ -4,6 +4,7 @@
                                   [metosin/testit "0.4.0-SNAPSHOT"]
                                   [criterium "0.4.4"]
                                   [metosin/ring-http-response "0.9.0"]
+                                  [org.slf4j/slf4j-nop "1.7.25"]
                                   [io.pedestal/pedestal.interceptor "0.5.4"]
                                   [org.clojure/core.async "0.4.474"]]}}
   :plugins [[lein-eftest "0.5.2"]]
