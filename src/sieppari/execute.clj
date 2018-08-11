@@ -7,11 +7,11 @@
     (catch Exception e
       (assoc ctx :exception e))))
 
-(defn- completed? [v]
-  (contains? v :response))
+(defn- completed? [ctx]
+  (contains? ctx :response))
 
-(defn- error? [v]
-  (contains? v :exception))
+(defn- error? [ctx]
+  (contains? ctx :exception))
 
 (defn- returned-nil [interceptor stage]
   (ex-info (format "%s of interceptor %s returned `nil`"
@@ -55,3 +55,34 @@
       (leave)
       (throw-on-error!)
       :response))
+
+(defn compile-interceptor-chain
+  "Waring: experimental"
+  [interceptor-chain]
+  (let [compile-fn (fn [{:keys [enter leave error]} f]
+                     (fn [ctx]
+                       (try
+                         (let [ctx (enter ctx)]
+                           (when (nil? ctx)
+                             (throw (ex-info "interceptor enter returned nil" {})))
+                           (if (completed? ctx)
+                             ctx
+                             (let [ctx (f ctx)]
+                               (if (error? ctx)
+                                 (error ctx)
+                                 (leave ctx)))))
+                         (catch Exception e
+                           (-> ctx
+                               (assoc :exception e)
+                               (error))))))
+        compiled-f (loop [f identity
+                          [interceptor & more] (reverse interceptor-chain)]
+                     (if-not interceptor
+                       f
+                       (recur (compile-fn interceptor f)
+                              more)))]
+    (fn [request]
+      (-> {:request request}
+          (compiled-f)
+          (throw-on-error!)
+          :response))))
