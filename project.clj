@@ -3,7 +3,9 @@
   :profiles {:dev {:dependencies [[eftest "0.5.2"]
                                   [metosin/testit "0.4.0-SNAPSHOT"]
                                   [criterium "0.4.4"]
-                                  [metosin/ring-http-response "0.9.0"]]}}
+                                  [metosin/ring-http-response "0.9.0"]
+                                  [io.pedestal/pedestal.interceptor "0.5.4"]
+                                  [org.clojure/core.async "0.4.474"]]}}
   :plugins [[lein-eftest "0.5.2"]]
   :eftest {:multithread? false}
   :test-selectors {:default (constantly true)
