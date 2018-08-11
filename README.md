@@ -306,7 +306,75 @@ determine if the handler requires the interceptor.
 
 ## Compiled chains
 
-* TODO: add `sieppari.execute.sync-compile/compile-interceptor-chain` example
+The `sieppari.execute.sync/execute` executes the interceptor
+chain by looping through the interceptors one by one. This
+is all quite fast, but it can not be optimized by the JVM
+very much.
+
+Another way to execute the interceptors is to create
+recursively functions that call the next functions, much like
+the ring middleware does. Creating the functions is more
+complicated, but it gives much more flexibility for JVM JIT
+to optimize the execution.
+
+_Sieppari_ has a functionality that foes just this. The
+`sieppari.execute.sync-compile/compile-interceptor-chain` takes
+the interceptor chain created by `sieppari.core/into-interceptors`
+and returns a function that executes the chain.
+
+Here's an example:
+
+```clj
+(ns example.compile
+  (:require [sieppari.core :as sc]
+            [sieppari.execute.sync :as ses]
+            [sieppari.execute.sync-compile :as sesc]))
+
+; Make an interceptor with given name, interceptor records
+; invocations to ctx for later analysis:
+
+(defn make-interceptor [name]
+  {:enter (fn [ctx] (println "ENTER:" name) ctx)
+   :leave (fn [ctx] (println "LEAVE:" name) ctx)
+   :error (fn [ctx] (println "ERROR:" name) ctx)})
+
+; Test stack with three interceptors and a handler that response
+; with `(inc request)`:
+
+(def interceptor-chain (-> [(make-interceptor :a)
+                            (make-interceptor :b)
+                            (make-interceptor :c)
+                            inc]
+                           (sc/into-interceptors)))
+
+; Executing the chain as befor:
+
+(ses/execute interceptor-chain 41)
+; Prints:
+;  ENTER: :a
+;  ENTER: :b
+;  ENTER: :c
+;  LEAVE: :c
+;  LEAVE: :b
+;  LEAVE: :a
+;=> 42
+
+; Compile the chain to a function:
+
+(def compiled-chain (sesc/compile-interceptor-chain interceptor-chain))
+
+(compiled-chain 41)
+; Prints:
+;  ENTER: :a
+;  ENTER: :b
+;  ENTER: :c
+;  LEAVE: :c
+;  LEAVE: :b
+;  LEAVE: :a
+;=> 42
+```
+
+The performance is about 5 times better, your mileage may wary (see [Performance]).
 
 # Performance
 
