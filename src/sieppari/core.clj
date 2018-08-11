@@ -1,5 +1,6 @@
 (ns sieppari.core
-  (:require [alandipert.kahn :as kahn]))
+  (:require [alandipert.kahn :as kahn]
+            [clojure.string :as str]))
 
 (defrecord Interceptor [name
                         enter
@@ -8,6 +9,9 @@
                         applies?
                         depends])
 
+(defn interceptor? [value]
+  (instance? Interceptor value))
+
 (def interceptor-defaults {:enter identity
                            :leave identity
                            :error identity
@@ -15,8 +19,19 @@
                            :depends #{}})
 
 (defn validate-interceptor [interceptor]
-  (when-not (contains? interceptor :name)
-    (throw (ex-info "interceptor :name is mandatory" {})))
+  (when-not (-> interceptor (contains? :name))
+    (throw (ex-info "interceptor :name is mandatory" {:interceptor interceptor})))
+  (when-not (-> interceptor :name keyword?)
+    (throw (ex-info "interceptor :name must be a keyword" {:interceptor interceptor})))
+  (when-let [non-fns (->> (map (juxt identity interceptor)
+                               [:enter :leave :error :applies-to?])
+                          (remove (comp fn? second))
+                          (map first)
+                          (seq))]
+    (println (pr-str non-fns))
+    (throw (ex-info (format "interceptor %s must be a function"
+                            (str/join non-fns ","))
+                    {:interceptor interceptor})))
   interceptor)
 
 (defprotocol IntoInterceptor
@@ -43,12 +58,7 @@
   (-interceptor [t]
     nil))
 
-(defn applies-to? [target]
-  (fn [interceptor]
-    (or (-> interceptor :system?)
-        (-> interceptor :applies-to? (apply [target])))))
-
-(defn- map-by-name [interceptors]
+(defn- index-by-name [interceptors]
   (reduce (fn [acc {:as interceptor :keys [name]}]
             (when (contains? acc name)
               (throw (ex-info (str "multiple interceptors with name: " name) {})))
@@ -61,7 +71,7 @@
     (throw (ex-info "interceptors have circular dependency" {})))
   sorted)
 
-(defn topology-sort [interceptors]
+(defn- topology-sort [interceptors]
   (->> interceptors
        (map (fn [{:keys [name depends]}]
               [name depends]))
@@ -84,16 +94,16 @@
 ;;
 
 (defn into-interceptors
-  ([interceptors]
-   (into-interceptors (butlast interceptors) (last interceptors)))
-  ([interceptors target]
-   (into-interceptors interceptors target target))
-  ([interceptors target handler]
+  ([interceptors handler target]
    (->> interceptors
+        (remove nil?)
         (map (partial merge interceptor-defaults))
-        (filter (applies-to? target))
-        (map-by-name)
+        (filter #(-> % :applies-to? (apply [target])))
+        (index-by-name)
         (sort-by-depends)
         (append handler)
-        (keep -interceptor))))
-
+        (map -interceptor)))
+  ([interceptors handler]
+   (into-interceptors interceptors handler handler))
+  ([interceptors]
+   (into-interceptors (butlast interceptors) (last interceptors))))
