@@ -324,6 +324,10 @@ executes the chain.
 | sieppari.execute.sync  | 14.550930 µs |
 | sieppari.execute.sync-compile | 2.434840 µs |
 
+* MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
+* Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
+* Clojure 1.9.0
+
 # Differences to Pedestal
 
 ## Manipulation of the interceptor chain
