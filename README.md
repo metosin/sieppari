@@ -1,6 +1,6 @@
 # sieppari
 
-Small [http://pedestal.io/reference/interceptors](interceptor) library with built-in 
+Small [interceptor](http://pedestal.io/reference/interceptors) library with built-in 
 dependency sorting and applicability filtering.
 
 > Noun
@@ -12,7 +12,7 @@ dependency sorting and applicability filtering.
 
 ## What it does
 
-Interceptors, like in [http://pedestal.io/](Pedestal), but
+Interceptors, like in [Pedestal](http://pedestal.io/), but
 with optional filtering and automatic dependency sorting.
 
 ## First example
@@ -42,7 +42,7 @@ with optional filtering and automatic dependency sorting.
 ```
 
 If you are new to interceptors, check the
-[http://pedestal.io/reference/interceptors](Pedestal Interceptors documentation).
+[Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
 If you are familiar with interceptors you might want to jump to [Differences to Pedestal].
 
 ## More examples
