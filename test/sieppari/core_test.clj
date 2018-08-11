@@ -41,12 +41,6 @@
     => {:name :handler
         :enter identity})
 
-  (fact "name and depends can be loaded from metadata"
-    (c/-interceptor #'handler-with-meta)
-    => {:name :handler-with-meta
-        :enter handler-with-meta
-        :depends (just #{:foo :bar})})
-
   (let [i (c/-interceptor identity)]
     (fact "interceptors are already interceptors"
       (c/-interceptor i) => i))
