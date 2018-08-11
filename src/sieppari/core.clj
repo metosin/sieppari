@@ -12,7 +12,6 @@
                            :leave identity
                            :error identity
                            :applies-to? (constantly true)
-                           :system? false
                            :depends #{}})
 
 (defn validate-interceptor [interceptor]
