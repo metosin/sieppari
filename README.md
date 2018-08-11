@@ -353,8 +353,8 @@ technology they desire.
 # Thanks
 
 * Original idea from [Pedestal Interceptors](https://github.com/pedestal/pedestal/tree/master/interceptor).
-* Motivation @ikitommi
-* Topology sorting @nilern 
+* Motivation [@ikitommi]
+* Topology sorting [@nilern] 
 
 ## License
 
