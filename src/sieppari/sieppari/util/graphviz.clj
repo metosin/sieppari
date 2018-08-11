@@ -12,7 +12,7 @@
                [[] 0])
        (first)
        (partition 2 1)
-       (map vec)))
+       (map (comp vec reverse))))
 
 (defn interceptors-dependency->graph [interceptors]
   (->> interceptors
