@@ -30,8 +30,7 @@
 
     (println "\n\nsiepari compiled:")
     (criterium/quick-bench
-      (compiled {}))
-    ))
+      (compiled {}))))
 
 (comment
 
@@ -44,6 +43,6 @@
   ;=> Execution time lower quantile : 11.716710 µs
   ;
   ; sieppari compiled:
-  ;=> Execution time lower quantile : 4.167632 µs
+  ;=> Execution time lower quantile : 3.981034 µs
 
   )

@@ -1,32 +1,43 @@
 (ns sieppari.execute.sync-compile
-  (:require [sieppari.execute.core :as sec]))
+  (:require [sieppari.core :as sc]
+            [sieppari.execute.core :as sec])
+  (:import (sieppari.core Interceptor)))
 
-(defn try-f [f ctx]
-  (try
-    (f ctx)
-    (catch Exception e
-      (assoc ctx :exception e))))
+(defn wrap-stage-f [f]
+  (fn [ctx]
+    (try
+      (f ctx)
+      (catch Exception e
+        (assoc ctx :exception e)))))
+
+(defn wrap-interceptor [interceptor]
+  (-> interceptor
+      (update :enter wrap-stage-f)
+      (update :leave wrap-stage-f)
+      (update :error wrap-stage-f)
+      (sc/-interceptor)))
 
 (defn compile-interceptor-chain
   "Accepts a chain of interceptors, returns a function that accepts
   the request and produces the response."
   [interceptor-chain]
-  (let [compile-fn (fn [next-f interceptor]
+  (let [compile-fn (fn [next-f ^Interceptor interceptor]
                      (fn [ctx]
-                       (let [ctx (try-f (:enter interceptor) ctx)]
+                       (let [ctx ((.enter interceptor) ctx)]
                          (if (or (contains? ctx :response)
                                  (contains? ctx :exception))
                            ctx
-                           (let [ctx (next-f ctx)
-                                 stage-f (if (contains? ctx :exception)
-                                           (:error interceptor)
-                                           (:leave interceptor))]
-                             (try-f stage-f ctx))))))
-        compiled-f (reduce compile-fn
-                           identity
-                           (reverse interceptor-chain))]
+                           (let [ctx (next-f ctx)]
+                             (if (contains? ctx :exception)
+                               ((.error interceptor) ctx)
+                               ((.leave interceptor) ctx)))))))
+        compiled (reduce compile-fn
+                         identity
+                         (->> interceptor-chain
+                              (map wrap-interceptor)
+                              (reverse)))]
     (fn [request]
       (-> {:request request}
-          (compiled-f)
+          (compiled)
           (sec/throw-if-error!)
           :response))))
