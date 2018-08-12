@@ -1,31 +1,29 @@
 (ns sieppari.execute.sync-compile
   (:require [sieppari.execute.core :as sec]))
 
+(defn try-f [f ctx]
+  (try
+    (f ctx)
+    (catch Exception e
+      (assoc ctx :exception e))))
+
 (defn compile-interceptor-chain
   "Waring: experimental"
   [interceptor-chain]
-  (let [compile-fn (fn [{:keys [enter leave error]} f]
+  (let [compile-fn (fn [next-f interceptor]
                      (fn [ctx]
-                       (try
-                         (let [ctx (enter ctx)]
-                           (when (nil? ctx)
-                             (throw (ex-info "interceptor enter returned nil" {})))
-                           (if (contains? ctx :response)
-                             ctx
-                             (let [ctx (f ctx)]
-                               (if (contains? ctx :exception)
-                                 (error ctx)
-                                 (leave ctx)))))
-                         (catch Exception e
-                           (-> ctx
-                               (assoc :exception e)
-                               (error))))))
-        compiled-f (loop [f identity
-                          [interceptor & more] (reverse interceptor-chain)]
-                     (if-not interceptor
-                       f
-                       (recur (compile-fn interceptor f)
-                              more)))]
+                       (let [ctx (try-f (:enter interceptor) ctx)]
+                         (if (or (contains? ctx :response)
+                                 (contains? ctx :exception))
+                           ctx
+                           (let [ctx (next-f ctx)
+                                 stage-f (if (contains? ctx :exception)
+                                           (:error interceptor)
+                                           (:leave interceptor))]
+                             (try-f stage-f ctx))))))
+        compiled-f (reduce compile-fn
+                           identity
+                           (reverse interceptor-chain))]
     (fn [request]
       (-> {:request request}
           (compiled-f)
