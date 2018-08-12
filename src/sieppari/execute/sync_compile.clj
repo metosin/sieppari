@@ -8,7 +8,8 @@
       (assoc ctx :exception e))))
 
 (defn compile-interceptor-chain
-  "Waring: experimental"
+  "Accepts a chain of interceptors, returns a function that accepts
+  the request and produces the response."
   [interceptor-chain]
   (let [compile-fn (fn [next-f interceptor]
                      (fn [ctx]
