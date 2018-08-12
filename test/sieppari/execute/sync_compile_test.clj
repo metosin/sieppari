@@ -2,20 +2,7 @@
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as sc]
-            [sieppari.execute.sync-compile :as sesc])
-  (:import (clojure.lang ExceptionInfo)))
-
-; Returns predicate that checks that the test result is a
-; ExceptionInfo, with optional check for message too.
-
-(defn ex-info?
-  ([]
-   (fn [actual]
-     (instance? ExceptionInfo actual)))
-  ([message]
-   (fn [actual]
-     (and (instance? ExceptionInfo actual)
-          (= message (.getMessage ^ExceptionInfo actual))))))
+            [sieppari.execute.sync-compile :as sesc]))
 
 ;
 ; Following tests use a test-chain that has some interceptors
