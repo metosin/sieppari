@@ -1,5 +1,6 @@
-(defproject sieppari "0.0.0-SNAPSHOT"
+(defproject metosin/sieppari "0.0.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
+                 ; Optional dependency for generating graphs from interceptors
                  [ubergraph "0.5.1" :scope "provided"]]
   :profiles {:dev {:source-paths ["examples"]
                    :dependencies [[eftest "0.5.2"]
