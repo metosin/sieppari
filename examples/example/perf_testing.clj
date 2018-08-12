@@ -3,8 +3,10 @@
             [sieppari.core :as sc]
             [sieppari.execute.sync :as ses]
             [sieppari.execute.sync-compile :as sesc]
+            [sieppari.execute.core-async-compile :as seac]
             [io.pedestal.interceptor :as p.i]
-            [io.pedestal.interceptor.chain :as p.c]))
+            [io.pedestal.interceptor.chain :as p.c]
+            [clojure.core.async :refer [<!!]]))
 
 (defn run-simple-perf-test [n]
   (let [interceptors (concat (repeatedly n (constantly {:enter identity
@@ -15,7 +17,8 @@
                      (map p.i/interceptor)
                      (doall))
         s-chain (sc/into-interceptors interceptors)
-        compiled (sesc/compile-interceptor-chain s-chain)]
+        compiled (sesc/compile-interceptor-chain s-chain)
+        async-compiled (seac/compile-interceptor-chain s-chain)]
     (println "\n\nn =" n)
 
     (println "\n\npedestal:")
@@ -30,7 +33,12 @@
 
     (println "\n\nsiepari compiled:")
     (criterium/quick-bench
-      (compiled {}))))
+      (compiled {}))
+
+    (println "\n\nsiepari async compiled:")
+    (criterium/quick-bench
+      (<!! (async-compiled {})))
+    ))
 
 (comment
 
