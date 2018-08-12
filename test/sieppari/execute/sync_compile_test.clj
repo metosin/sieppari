@@ -1,7 +1,6 @@
 (ns sieppari.execute.sync-compile-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.core :as sc]
             [sieppari.execute.sync-compile :as sesc]))
 
 ;
@@ -75,7 +74,6 @@
         (assoc-in [c-index :leave] identity)
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
         (sesc/compile-interceptor-chain)
         (apply [41]))
     => 42))
@@ -86,7 +84,6 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] always-throw)
         (assoc-in [a-index :error] identity)
-        (sc/into-interceptors)
         (sesc/compile-interceptor-chain)
         (apply [41]))
     => (throws-ex-info "oh no")))
@@ -99,7 +96,6 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] (handle-error :fixed-by-a))
-        (sc/into-interceptors)
         (sesc/compile-interceptor-chain)
         (apply [41]))
     => :fixed-by-a))
@@ -112,7 +108,6 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
         (sesc/compile-interceptor-chain)
         (apply [41]))
     => :fixed-by-b))
@@ -127,7 +122,6 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
         (sesc/compile-interceptor-chain)
         (apply [41]))
     => :fixed-by-b))
@@ -138,7 +132,6 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] (fn [ctx] (assoc ctx :response :response-by-b)))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
         (sesc/compile-interceptor-chain)
         (apply [41]))
     => :response-by-b))
