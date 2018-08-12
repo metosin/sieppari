@@ -14,8 +14,7 @@
   (-> interceptor
       (update :enter wrap-stage-f)
       (update :leave wrap-stage-f)
-      (update :error wrap-stage-f)
-      (sc/-interceptor)))
+      (update :error wrap-stage-f)))
 
 (defn compile-interceptor-chain
   "Accepts a chain of interceptors, returns a function that accepts
@@ -34,6 +33,7 @@
         compiled (reduce compile-fn
                          identity
                          (->> interceptor-chain
+                              (sc/into-interceptors)
                               (map wrap-interceptor)
                               (reverse)))]
     (fn [request]
