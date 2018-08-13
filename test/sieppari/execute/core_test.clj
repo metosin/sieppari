@@ -11,12 +11,12 @@
   (let [e (RuntimeException. "oh no")
         f (fn [_] (throw e))]
     (fact "f fails with exception"
-      (try-f f {}) => (just {:exception e}))))
+      (try-f f {}) => (just {:error e}))))
 
 (deftest throw-if-error!-test
   (fact "if no exception in ctx, return just ctx"
     (throw-if-error! {})
     => (just {}))
   (fact "if there is an exception in ctx, throw it"
-    (throw-if-error! {:exception (ex-info "oh no" {})})
+    (throw-if-error! {:error (ex-info "oh no" {})})
     => (throws-ex-info "oh no")))

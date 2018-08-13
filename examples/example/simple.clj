@@ -88,7 +88,7 @@
          (assoc :error (fn [ctx]
                          (println "ERROR: :b - this handles the exception")
                          (-> ctx
-                             (dissoc :exception)
+                             (dissoc :error)
                              (assoc :response :fixed-by-b)))))
      (make-interceptor :c)
      (fn [request]

@@ -14,7 +14,7 @@
             (<! ctx)
             ctx))
         (catch Exception e
-          (assoc ctx :exception e))))))
+          (assoc ctx :error e))))))
 
 (defn wrap-interceptor [interceptor]
   (-> interceptor
@@ -32,11 +32,11 @@
                          (let [ch ((.enter interceptor) ctx)
                                ctx (<! ch)]
                            (if (or (contains? ctx :response)
-                                   (contains? ctx :exception))
+                                   (contains? ctx :error))
                              ctx
                              (let [ch (next-f ctx)
                                    ctx (<! ch)
-                                   ch (if (contains? ctx :exception)
+                                   ch (if (contains? ctx :error)
                                         ((.error interceptor) ctx)
                                         ((.leave interceptor) ctx))]
                                (<! ch)))))))
@@ -50,4 +50,4 @@
       (go (-> {:request request}
               (compiled)
               (<!)
-              (some [:exception :response]))))))
+              (some [:error :response]))))))

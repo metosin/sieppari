@@ -46,7 +46,7 @@
 ;; in data part:
 
 (defn always-throw [ctx]
-  (throw (ex-info "oh no" {::exception-marker true})))
+  (throw (ex-info "oh no" {::error-marker true})))
 
 ;; Helper: return error handler function that ensures
 ;; that `ctx` contains an exception caused by `always-throw`,
@@ -55,9 +55,9 @@
 (defn handle-error [response]
   (fn [ctx]
     (assert (not (contains? ctx :response)))
-    (assert (-> ctx :exception ex-data (= {::exception-marker true})))
+    (assert (-> ctx :error ex-data (= {::error-marker true})))
     (-> ctx
-        (dissoc :exception)
+        (dissoc :error)
         (assoc :response response))))
 
 ;;

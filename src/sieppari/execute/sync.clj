@@ -8,7 +8,7 @@
     (if interceptor
       (let [ctx (ec/try-f (:enter interceptor) ctx)]
         (if (or (contains? ctx :response)
-                (contains? ctx :exception))
+                (contains? ctx :error))
           [ctx done]
           (recur ctx
                  more
@@ -19,7 +19,7 @@
   (loop [ctx ctx
          [interceptor & more] done]
     (if interceptor
-      (let [stage (if (contains? ctx :exception) :error :leave)
+      (let [stage (if (contains? ctx :error) :error :leave)
             ctx (ec/try-f (stage interceptor) ctx)]
         (recur ctx more))
       ctx)))
