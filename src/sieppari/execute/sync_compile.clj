@@ -8,7 +8,7 @@
     (try
       (f ctx)
       (catch Exception e
-        (assoc ctx :exception e)))))
+        (assoc ctx :error e)))))
 
 (defn wrap-interceptor [interceptor]
   (-> interceptor
@@ -24,10 +24,10 @@
                      (fn [ctx]
                        (let [ctx ((.enter interceptor) ctx)]
                          (if (or (contains? ctx :response)
-                                 (contains? ctx :exception))
+                                 (contains? ctx :error))
                            ctx
                            (let [ctx (next-f ctx)]
-                             (if (contains? ctx :exception)
+                             (if (contains? ctx :error)
                                ((.error interceptor) ctx)
                                ((.leave interceptor) ctx)))))))
         compiled (reduce compile-fn

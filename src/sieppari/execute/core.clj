@@ -4,9 +4,9 @@
   (try
     (f ctx)
     (catch Exception e
-      (assoc ctx :exception e))))
+      (assoc ctx :error e))))
 
 (defn throw-if-error! [ctx]
-  (when-let [e (:exception ctx)]
+  (when-let [e (:error ctx)]
     (throw e))
   ctx)

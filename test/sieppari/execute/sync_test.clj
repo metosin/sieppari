@@ -69,7 +69,7 @@
                                                           (throw (ex-info "oh no" {})))}
                                                 inc]))
     => [{:enter-fn [:a :b]
-         :exception (ex-info? "oh no")}
+         :error (ex-info? "oh no")}
         [{:name :b}
          {:name :a}]])
 
@@ -81,7 +81,7 @@
                                  (throw (ex-info "oh no" {})))]
                               (sc/into-interceptors)))
     => [{:enter-fn [:a :b :c]
-         :exception (ex-info? "oh no")}
+         :error (ex-info? "oh no")}
         [{:name :c}
          {:name :b}
          {:name :a}]]))
@@ -105,8 +105,8 @@
         :leave-fn [:c :b :a]})
 
   (fact "failure from handler causes application of all error functions"
-    (leave [{:exception (ex-info "oh no" {})} done-stack])
-    => {:exception (ex-info? "oh no")
+    (leave [{:error (ex-info "oh no" {})} done-stack])
+    => {:error (ex-info? "oh no")
         :error-fn [:c :b :a]})
 
   (fact "failure in leave function of interceptor :b, execution moves to error path"
@@ -118,14 +118,14 @@
         ; :b caused an error causing execution to follow error path
         :error-fn [:a]
         ; The error is still in resulting ctx
-        :exception (ex-info? "oh no")})
+        :error (ex-info? "oh no")})
 
   (fact "failure in handler, but :b can correct it"
-    (leave [{:exception (ex-info "oh no" {})} (assoc-in done-stack
+    (leave [{:error (ex-info "oh no" {})} (assoc-in done-stack
                                                         [1 :error]
                                                         (fn [ctx]
                                                           (-> ctx
-                                                              (dissoc :exception)
+                                                              (dissoc :error)
                                                               (assoc :response :fixed-by-b))))])
     => {; c: error was applies
         :error-fn [:c]

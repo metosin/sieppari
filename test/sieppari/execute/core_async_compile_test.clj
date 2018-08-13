@@ -1,7 +1,9 @@
-(ns sieppari.execute.sync-compile-test
+(ns sieppari.execute.core-async-compile-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.execute.sync-compile :as sesc]))
+            [sieppari.core :as sc]
+            [sieppari.execute.core-async-compile :as seac]
+            [clojure.core.async :as a :refer [<!!]]))
 
 ;
 ; Following tests use a test-chain that has some interceptors
@@ -74,8 +76,9 @@
         (assoc-in [c-index :leave] identity)
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (sesc/compile-interceptor-chain)
-        (apply [41]))
+        (seac/compile-interceptor-chain)
+        (apply [41])
+        (<!!))
     => 42))
 
 (deftest enter-b-causes-exception-test
@@ -84,8 +87,10 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] always-throw)
         (assoc-in [a-index :error] identity)
-        (sesc/compile-interceptor-chain)
-        (apply [41]))
+        (sc/into-interceptors)
+        (seac/compile-interceptor-chain)
+        (apply [41])
+        (<!!))
     => (throws-ex-info "oh no")))
 
 (deftest enter-c-causes-exception-a-handles-test
@@ -96,8 +101,10 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] (handle-error :fixed-by-a))
-        (sesc/compile-interceptor-chain)
-        (apply [41]))
+        (sc/into-interceptors)
+        (seac/compile-interceptor-chain)
+        (apply [41])
+        (<!!))
     => :fixed-by-a))
 
 (deftest enter-c-causes-exception-b-handles-test
@@ -108,8 +115,10 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sesc/compile-interceptor-chain)
-        (apply [41]))
+        (sc/into-interceptors)
+        (seac/compile-interceptor-chain)
+        (apply [41])
+        (<!!))
     => :fixed-by-b))
 
 (deftest handler-causes-exception-b-handles-test
@@ -122,8 +131,10 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sesc/compile-interceptor-chain)
-        (apply [41]))
+        (sc/into-interceptors)
+        (seac/compile-interceptor-chain)
+        (apply [41])
+        (<!!))
     => :fixed-by-b))
 
 (deftest enter-b-sets-response-test
@@ -132,6 +143,8 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] (fn [ctx] (assoc ctx :response :response-by-b)))
         (assoc-in [a-index :leave] identity)
-        (sesc/compile-interceptor-chain)
-        (apply [41]))
+        (sc/into-interceptors)
+        (seac/compile-interceptor-chain)
+        (apply [41])
+        (<!!))
     => :response-by-b))
