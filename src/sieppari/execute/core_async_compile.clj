@@ -1,7 +1,6 @@
 (ns sieppari.execute.core-async-compile
   (:require [sieppari.core :as sc]
-            [sieppari.execute.core :as sec]
-            [clojure.core.async :as a :refer [go <!]])
+            [clojure.core.async :refer [go <!]])
   (:import (sieppari.core Interceptor)
            (clojure.core.async.impl.protocols Channel)))
 
