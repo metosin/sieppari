@@ -4,11 +4,7 @@
   (:import (sieppari.core Interceptor)))
 
 (defn wrap-stage-f [f]
-  (fn [ctx]
-    (try
-      (f ctx)
-      (catch Exception e
-        (assoc ctx :error e)))))
+  (partial sec/try-f f))
 
 (defn wrap-interceptor [interceptor]
   (-> interceptor
