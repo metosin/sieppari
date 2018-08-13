@@ -19,4 +19,5 @@
                    :all (constantly true)}
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :aliases {"perf" ["with-profile" "default,dev,perf"]})
+  :aliases {"perf" ["with-profile" "default,dev,perf"]
+            "run-perf" ["perf" "run" "-m" "example.perf-testing"]})

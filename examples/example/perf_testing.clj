@@ -40,6 +40,9 @@
       (<!! (async-compiled {})))
     ))
 
+(defn -main [& _]
+  (run-simple-perf-test 100))
+
 (comment
 
   (run-simple-perf-test 100)
