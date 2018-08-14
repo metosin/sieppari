@@ -1,8 +1,8 @@
-(ns sieppari.execute.sync-test
+(ns sieppari.execute-enter-leave-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as sc]
-            [sieppari.execute.sync :as ses])
+            [sieppari.execute :as se])
   (:import (clojure.lang ExceptionInfo)))
 
 ; Returns predicate that checks that the test result is a
@@ -46,7 +46,7 @@
 ;;
 
 ; Import private sc/enter:
-(def enter #'ses/enter)
+(def enter #'se/enter)
 
 (deftest enter-test
   (fact "applies handler with :request"
@@ -56,11 +56,11 @@
   (fact "applies interceptors in order"
     (enter {:request 41, :stack test-chain})
     => {:enter-fn [:a :b :c]
-        ::ses/done [{:name :c} {:name :b} {:name :a}]})
+        ::se/done [{:name :c} {:name :b} {:name :a}]})
 
   (fact "the `::ses/done` contains applied interceptors in leave order"
     (enter {:request 41, :stack test-chain})
-    => {::ses/done [{:name :c} {:name :b} {:name :a}]})
+    => {::se/done [{:name :c} {:name :b} {:name :a}]})
 
   (fact "error in interceptor :c, exception in ctx and done has :b and :a"
     (enter {:request 41, :stack (sc/into-interceptors [(make-test-interceptor :a)
@@ -70,7 +70,7 @@
                                                                  (throw (ex-info "oh no" {})))}
                                                        inc])})
     => {:error (ex-info? "oh no")
-        ::ses/done [{:name :b} {:name :a}]})
+        ::se/done [{:name :b} {:name :a}]})
 
   (fact "error in handler, exception in ctx and done has :c, :b and :a"
     (enter {:request 41, :stack (->> [(make-test-interceptor :a)
@@ -81,14 +81,14 @@
                                      (sc/into-interceptors))})
     => {:error (ex-info? "oh no")
         :enter-fn [:a :b :c]
-        ::ses/done [{:name :c} {:name :b} {:name :a}]}))
+        ::se/done [{:name :c} {:name :b} {:name :a}]}))
 
 ;;
 ;; leave:
 ;;
 
 ; Import private leave:
-(def leave #'ses/leave)
+(def leave #'se/leave)
 
 ; The `done` part of sc/enter response when execution was successful:
 (def done-stack [(nth test-chain 2)
@@ -109,7 +109,8 @@
   (fact "failure in leave function of interceptor :b, execution moves to error path"
     (leave {:response 42, :stack (assoc-in done-stack
                                            [1 :leave]
-                                           (fn [ctx] (throw (ex-info "oh no" {}))))})
+                                           (fn [ctx]
+                                             (assoc ctx :error (ex-info "oh no" {}))))})
     => {; c: was applies successfully
         :leave-fn [:c]
         ; :b caused an error causing execution to follow error path
@@ -137,5 +138,5 @@
 
 (deftest execute-test
   (fact
-    (ses/execute test-chain 41) => 42))
+    (se/execute test-chain 41) => 42))
 

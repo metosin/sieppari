@@ -1,6 +1,6 @@
 (ns example.simple
   (:require [sieppari.core :as sc]
-            [sieppari.execute.sync :as ses]))
+            [sieppari.execute :as se]))
 
 ;;
 ;; Demonstrate functionality, mainly for documentation purposes:
@@ -21,7 +21,7 @@
 (def interceptor-chain (sc/into-interceptors [inc-in-interceptor
                                               handler]))
 
-(ses/execute interceptor-chain {:in 40})
+(se/execute interceptor-chain {:in 40})
 ;=> {:out 42}
 
 ;;
@@ -42,7 +42,7 @@
        (println "HANDLER: request =" (pr-str request))
        "handler response")]))
 
-(ses/execute interceptor-chain "request message")
+(se/execute interceptor-chain "request message")
 ; Prints:
 ;  ENTER: :a
 ;  ENTER: :b
@@ -66,7 +66,8 @@
        (println "HANDLER: request =" (pr-str request))
        (throw (ex-info "oh no" {})))]))
 
-(ses/execute interceptor-chain "request message")
+(comment
+  (se/execute interceptor-chain "request message"))
 ; Prints:
 ;  ENTER: :a
 ;  ENTER: :b
@@ -95,7 +96,7 @@
        (println "HANDLER: request =" (pr-str request))
        (throw (ex-info "oh no" {})))]))
 
-(ses/execute interceptor-chain "request message")
+(se/execute interceptor-chain "request message")
 ; Prints:
 ;  ENTER: :a
 ;  ENTER: :b
@@ -122,7 +123,7 @@
        (println "HANDLER: request =" (pr-str request))
        "response from handler")]))
 
-(ses/execute interceptor-chain "request message")
+(se/execute interceptor-chain "request message")
 ; Prints
 ;   ENTER: :a
 ;   ENTER: :b - short circuit
@@ -135,14 +136,14 @@
 ;;
 
 (defn make-interceptor [name]
-  {:enter (fn [ctx] (update ctx :stack conj [:enter name]))
-   :leave (fn [ctx] (update ctx :stack conj [:leave name]))
-   :error (fn [ctx] (update ctx :stack conj [:error name]))})
+  {:enter (fn [ctx] (update ctx :log conj [:enter name]))
+   :leave (fn [ctx] (update ctx :log conj [:leave name]))
+   :error (fn [ctx] (update ctx :log conj [:error name]))})
 
 (def interceptor-chain
   (sc/into-interceptors
     [{:enter (fn [ctx]
-               (assoc ctx :stack []))}
+               (assoc ctx :log []))}
      (make-interceptor :a)
      (make-interceptor :b)
      (make-interceptor :c)
@@ -150,7 +151,7 @@
        (println "ENTER: request =" (pr-str request))
        {:response :response-from-handler})]))
 
-(ses/execute interceptor-chain {})
+(se/execute interceptor-chain {})
 ; Prints:
 ;  ENTER: request = {}
 ;=> {:response :response-from-handler}
@@ -162,18 +163,18 @@
 (def interceptor-chain
   (sc/into-interceptors
     [{:enter (fn [ctx]
-               (assoc ctx :stack []))}
+               (assoc ctx :log []))}
      (make-interceptor :a)
      (make-interceptor :b)
      (make-interceptor :c)
      {:enter (fn [ctx]
-               (assoc-in ctx [:request :stack-so-far] (:stack ctx)))}
+               (assoc-in ctx [:request :log-so-far] (:log ctx)))}
      (fn [request]
-       (println "ENTER: stack =" (pr-str (:stack-so-far request)))
+       (println "ENTER: log =" (pr-str (:log-so-far request)))
        {:response :response-from-handler})]))
 
-(ses/execute interceptor-chain {})
-; Prints: ENTER: stack = [[:enter :a] [:enter :b] [:enter :c]]
+(se/execute interceptor-chain {})
+; Prints: ENTER: log = [[:enter :a] [:enter :b] [:enter :c]]
 ;=> {:response :response-from-handler}
 
 ;;
@@ -183,25 +184,24 @@
 (def interceptor-chain
   (sc/into-interceptors
     [{:enter (fn [ctx]
-               (assoc ctx :stack []))
+               (assoc ctx :log []))
       :leave (fn [ctx]
-               (assoc-in ctx [:response :final-stack] (:stack ctx)))}
+               (assoc-in ctx [:response :final-log] (:log ctx)))}
      (make-interceptor :a)
      (make-interceptor :b)
      (make-interceptor :c)
      {:enter (fn [ctx]
-               (assoc-in ctx [:request :stack-so-far] (:stack ctx)))}
+               (assoc-in ctx [:request :log-so-far] (:log ctx)))}
      (fn [request]
-       (println "ENTER: stack =" (pr-str (:stack-so-far request)))
+       (println "ENTER: log =" (pr-str (:log-so-far request)))
        {:response :response-from-handler})]))
 
-(ses/execute interceptor-chain {})
-; Prints: ENTER: stack = [[:enter :a] [:enter :b] [:enter :c]]
+(se/execute interceptor-chain {})
+; Prints: ENTER: log = [[:enter :a] [:enter :b] [:enter :c]]
 ;=> {:response :response-from-handler
-;    :final-stack [[:enter :a]
-;                  [:enter :b]
-;                  [:enter :c]
-;                  [:leave :c]
-;                  [:leave :b]
-;                  [:leave :a]]}
-
+;    :final-log [[:enter :a]
+;                [:enter :b]
+;                [:enter :c]
+;                [:leave :c]
+;                [:leave :b]
+;                [:leave :a]]}

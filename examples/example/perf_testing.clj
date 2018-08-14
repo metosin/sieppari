@@ -1,11 +1,11 @@
 (ns example.perf-testing
   (:require [criterium.core :as criterium]
-            [sieppari.core :as sc]
-            [sieppari.execute.sync :as ses]
-            [sieppari.execute.sync-compile :as sesc]
-            [sieppari.execute.core-async-compile :as seac]
-            [io.pedestal.interceptor :as p.i]
-            [io.pedestal.interceptor.chain :as p.c]
+            [sieppari.core :as s]
+            [sieppari.execute :as se]
+            [sieppari.compile :as sc]
+            [sieppari.core-async.compile :as sac]
+            [io.pedestal.interceptor :as pi]
+            [io.pedestal.interceptor.chain :as pc]
             [clojure.core.async :refer [<!!]]))
 
 (defn run-simple-perf-test [n]
@@ -14,30 +14,30 @@
                                                         :error identity}))
                              [identity])
         p-chain (->> interceptors
-                     (map p.i/interceptor)
+                     (map pi/interceptor)
                      (doall))
-        s-chain (sc/into-interceptors interceptors)
-        compiled (sesc/compile-interceptor-chain s-chain)
-        async-compiled (seac/compile-interceptor-chain s-chain)]
+        s-chain (s/into-interceptors interceptors)
+        compiled (sc/compile-interceptor-chain s-chain)
+        async-compiled (sac/compile-interceptor-chain s-chain)]
     (println "\n\nn =" n)
 
     (println "\n\npedestal:")
     (criterium/quick-bench
       (-> {}
-          (p.c/enqueue p-chain)
-          (p.c/execute)))
+          (pc/enqueue p-chain)
+          (pc/execute)))
 
     (println "\n\nsieppari execute:")
     (criterium/quick-bench
-      (ses/execute s-chain {}))
+      (se/execute s-chain {}))
 
     (println "\n\nsiepari compiled:")
     (criterium/quick-bench
       (compiled {}))
 
-    (println "\n\nsiepari async compiled:")
-    (criterium/quick-bench
-      (<!! (async-compiled {})))
+    ;(println "\n\nsiepari async compiled:")
+    ;(criterium/quick-bench
+    ;  (<!! (async-compiled {})))
     ))
 
 (defn -main [& _]

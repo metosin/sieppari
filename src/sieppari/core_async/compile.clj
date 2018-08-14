@@ -1,4 +1,4 @@
-(ns sieppari.execute.core-async-compile
+(ns sieppari.core-async.compile
   (:require [sieppari.core :as sc]
             [clojure.core.async :refer [go <!]])
   (:import (sieppari.core Interceptor)

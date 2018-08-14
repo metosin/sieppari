@@ -1,7 +1,7 @@
-(ns sieppari.ordering-test
+(ns sieppari.util.ordering-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.ordering :refer [dependency-order]]))
+            [sieppari.util.ordering :refer [dependency-order]]))
 
 (deftest dependency-order-test
   (fact "without any depends, all interceptors are included but the order in undefined"

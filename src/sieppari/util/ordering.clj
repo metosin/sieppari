@@ -1,4 +1,4 @@
-(ns sieppari.ordering)
+(ns sieppari.util.ordering)
 
 (defn dependency-order
   "Put given `interceptors` in dependency order. Can also be described as a
