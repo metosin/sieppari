@@ -36,6 +36,11 @@
                     (sc/into-interceptors)
                     (vec)))
 
+(def a-index 0)
+(def b-index 1)
+(def c-index 2)
+(def h-index 3)
+
 ;;
 ;; enter:
 ;;
@@ -44,47 +49,39 @@
 (def enter #'ses/enter)
 
 (deftest enter-test
-  (fact "applies interceptors in order"
-    (enter {:request 41} test-chain)
-    => [{:enter-fn [:a :b :c]}
-        ...])
-
   (fact "applies handler with :request"
-    (enter {:request 41} test-chain)
-    => [{:response 42}
-        ...])
+    (enter {:request 41, :stack test-chain})
+    => {:response 42})
 
-  (fact "the `done` contains applied interceptors in leave order"
-    (enter {:request 41} test-chain)
-    => [any
-        [{:name :c}
-         {:name :b}
-         {:name :a}]])
+  (fact "applies interceptors in order"
+    (enter {:request 41, :stack test-chain})
+    => {:enter-fn [:a :b :c]
+        ::ses/done [{:name :c} {:name :b} {:name :a}]})
+
+  (fact "the `::ses/done` contains applied interceptors in leave order"
+    (enter {:request 41, :stack test-chain})
+    => {::ses/done [{:name :c} {:name :b} {:name :a}]})
 
   (fact "error in interceptor :c, exception in ctx and done has :b and :a"
-    (enter {:request 41} (sc/into-interceptors [(make-test-interceptor :a)
-                                                (make-test-interceptor :b)
-                                                {:name :c
-                                                 :enter (fn [ctx]
-                                                          (throw (ex-info "oh no" {})))}
-                                                inc]))
-    => [{:enter-fn [:a :b]
-         :error (ex-info? "oh no")}
-        [{:name :b}
-         {:name :a}]])
+    (enter {:request 41, :stack (sc/into-interceptors [(make-test-interceptor :a)
+                                                       (make-test-interceptor :b)
+                                                       {:name :c
+                                                        :enter (fn [ctx]
+                                                                 (throw (ex-info "oh no" {})))}
+                                                       inc])})
+    => {:error (ex-info? "oh no")
+        ::ses/done [{:name :b} {:name :a}]})
 
   (fact "error in handler, exception in ctx and done has :c, :b and :a"
-    (enter {:request 41} (->> [(make-test-interceptor :a)
-                               (make-test-interceptor :b)
-                               (make-test-interceptor :c)
-                               (fn [request]
-                                 (throw (ex-info "oh no" {})))]
-                              (sc/into-interceptors)))
-    => [{:enter-fn [:a :b :c]
-         :error (ex-info? "oh no")}
-        [{:name :c}
-         {:name :b}
-         {:name :a}]]))
+    (enter {:request 41, :stack (->> [(make-test-interceptor :a)
+                                      (make-test-interceptor :b)
+                                      (make-test-interceptor :c)
+                                      (fn [request]
+                                        (throw (ex-info "oh no" {})))]
+                                     (sc/into-interceptors))})
+    => {:error (ex-info? "oh no")
+        :enter-fn [:a :b :c]
+        ::ses/done [{:name :c} {:name :b} {:name :a}]}))
 
 ;;
 ;; leave:
@@ -100,19 +97,19 @@
 
 (deftest leave-test
   (fact "leave with successful enter response applies all leave functions"
-    (leave [{:response 42} done-stack])
+    (leave {:response 42, :stack done-stack})
     => {:response 42
         :leave-fn [:c :b :a]})
 
   (fact "failure from handler causes application of all error functions"
-    (leave [{:error (ex-info "oh no" {})} done-stack])
+    (leave {:error (ex-info "oh no" {}), :stack done-stack})
     => {:error (ex-info? "oh no")
         :error-fn [:c :b :a]})
 
   (fact "failure in leave function of interceptor :b, execution moves to error path"
-    (leave [{:response 42} (assoc-in done-stack
-                                     [1 :leave]
-                                     (fn [ctx] (throw (ex-info "oh no" {}))))])
+    (leave {:response 42, :stack (assoc-in done-stack
+                                           [1 :leave]
+                                           (fn [ctx] (throw (ex-info "oh no" {}))))})
     => {; c: was applies successfully
         :leave-fn [:c]
         ; :b caused an error causing execution to follow error path
@@ -121,12 +118,12 @@
         :error (ex-info? "oh no")})
 
   (fact "failure in handler, but :b can correct it"
-    (leave [{:error (ex-info "oh no" {})} (assoc-in done-stack
-                                                        [1 :error]
-                                                        (fn [ctx]
-                                                          (-> ctx
-                                                              (dissoc :error)
-                                                              (assoc :response :fixed-by-b))))])
+    (leave {:error (ex-info "oh no" {}), :stack (assoc-in done-stack
+                                                          [1 :error]
+                                                          (fn [ctx]
+                                                            (-> ctx
+                                                                (dissoc :error)
+                                                                (assoc :response :fixed-by-b))))})
     => {; c: error was applies
         :error-fn [:c]
         ; :b fixed error, execution moved to leave path

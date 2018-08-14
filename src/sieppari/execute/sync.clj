@@ -1,32 +1,44 @@
 (ns sieppari.execute.sync
   (:require [sieppari.execute.core :as ec]))
 
-(defn- enter [ctx interceptors]
-  (loop [ctx ctx
-         [interceptor & more] interceptors
-         done ()]
-    (if interceptor
-      (let [ctx (ec/try-f (:enter interceptor) ctx)]
-        (if (or (contains? ctx :response)
-                (contains? ctx :error))
-          [ctx done]
-          (recur ctx
-                 more
-                 (cons interceptor done))))
-      [ctx done])))
+; TODO: Migrate ec/try-f to this
+(defn try-f [ctx stage interceptor]
+  (try
+    (let [f (stage interceptor)]
+      (f ctx))
+    (catch Exception e
+      (assoc ctx :error e))))
 
-(defn- leave [[ctx done]]
-  (loop [ctx ctx
-         [interceptor & more] done]
-    (if interceptor
-      (let [stage (if (contains? ctx :error) :error :leave)
-            ctx (ec/try-f (stage interceptor) ctx)]
-        (recur ctx more))
-      ctx)))
+(defn- enter [ctx]
+  (if-let [interceptor (-> ctx :stack first)]
+    (let [ctx (-> ctx
+                  (update :stack next)
+                  (try-f :enter interceptor))]
+      (if (or (-> ctx :response)
+              (-> ctx :error)
+              (-> ctx :stack (empty?)))
+        ctx
+        (-> ctx
+            (update ::done conj interceptor)
+            (recur))))
+    ctx))
+
+(defn- leave [ctx]
+  (if-let [interceptor (-> ctx :stack first)]
+    (-> ctx
+        (update :stack next)
+        (try-f (if (:error ctx) :error :leave) interceptor)
+        (recur))
+    ctx))
+
+(defn swap-direction [ctx]
+  (assoc ctx :stack (::done ctx)))
 
 (defn execute [interceptors request]
-  (-> {:request request}
-      (enter interceptors)
+  (-> {:request request
+       :stack (seq interceptors)}
+      (enter)
+      (swap-direction)
       (leave)
       (ec/throw-if-error!)
       :response))
