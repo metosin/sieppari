@@ -1,7 +1,7 @@
 (ns example.compile
   (:require [sieppari.core :as sc]
-            [sieppari.execute.sync :as ses]
-            [sieppari.execute.sync-compile :as sesc]))
+            [sieppari.execute :as se]
+            [sieppari.compile :as scc]))
 
 ; Make an interceptor with given name, interceptor records
 ; invocations to ctx for later analysis:
@@ -20,7 +20,7 @@
                             inc]
                            (sc/into-interceptors)))
 
-(ses/execute interceptor-chain 41)
+(se/execute interceptor-chain 41)
 ; Prints:
 ;  ENTER: :a
 ;  ENTER: :b
@@ -30,7 +30,7 @@
 ;  LEAVE: :a
 ;=> 42
 
-(def compiled-chain (sesc/compile-interceptor-chain interceptor-chain))
+(def compiled-chain (scc/compile-interceptor-chain interceptor-chain))
 
 (compiled-chain 41)
 ; Prints:

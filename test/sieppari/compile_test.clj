@@ -1,9 +1,7 @@
-(ns sieppari.execute.core-async-compile-test
+(ns sieppari.compile-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.core :as sc]
-            [sieppari.execute.core-async-compile :as seac]
-            [clojure.core.async :as a :refer [<!!]]))
+            [sieppari.compile :refer [compile-interceptor-chain]]))
 
 ;
 ; Following tests use a test-chain that has some interceptors
@@ -76,9 +74,8 @@
         (assoc-in [c-index :leave] identity)
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (seac/compile-interceptor-chain)
-        (apply [41])
-        (<!!))
+        (compile-interceptor-chain)
+        (apply [41]))
     => 42))
 
 (deftest enter-b-causes-exception-test
@@ -87,10 +84,8 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] always-throw)
         (assoc-in [a-index :error] identity)
-        (sc/into-interceptors)
-        (seac/compile-interceptor-chain)
-        (apply [41])
-        (<!!))
+        (compile-interceptor-chain)
+        (apply [41]))
     => (throws-ex-info "oh no")))
 
 (deftest enter-c-causes-exception-a-handles-test
@@ -101,10 +96,8 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] (handle-error :fixed-by-a))
-        (sc/into-interceptors)
-        (seac/compile-interceptor-chain)
-        (apply [41])
-        (<!!))
+        (compile-interceptor-chain)
+        (apply [41]))
     => :fixed-by-a))
 
 (deftest enter-c-causes-exception-b-handles-test
@@ -115,10 +108,8 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
-        (seac/compile-interceptor-chain)
-        (apply [41])
-        (<!!))
+        (compile-interceptor-chain)
+        (apply [41]))
     => :fixed-by-b))
 
 (deftest handler-causes-exception-b-handles-test
@@ -131,10 +122,8 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
-        (seac/compile-interceptor-chain)
-        (apply [41])
-        (<!!))
+        (compile-interceptor-chain)
+        (apply [41]))
     => :fixed-by-b))
 
 (deftest enter-b-sets-response-test
@@ -143,8 +132,60 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] (fn [ctx] (assoc ctx :response :response-by-b)))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
-        (seac/compile-interceptor-chain)
-        (apply [41])
-        (<!!))
+        (compile-interceptor-chain)
+        (apply [41]))
     => :response-by-b))
+
+;;
+;; Compiled interceptors do not support dynamic stack changes:
+;;
+
+#_
+(deftest add-interceptor-test
+  (fact ":b adds interceptor :x to chain, :x calls inc on response on enter and leave"
+    (-> test-chain
+        (assoc-in [a-index :enter] identity)
+        (assoc-in [b-index :enter] (fn [ctx]
+                                     (update ctx :stack conj (sc/into-interceptor
+                                                               (assoc (make-test-interceptor :x)
+                                                                 :enter (fn [ctx]
+                                                                          (update ctx :request inc))
+                                                                 :leave (fn [ctx]
+                                                                          (update ctx :response inc)))))))
+        (assoc-in [c-index :enter] identity)
+        (assoc-in [h-index] inc)
+        (assoc-in [c-index :leave] identity)
+        (assoc-in [b-index :leave] identity)
+        (assoc-in [a-index :leave] identity)
+        (compile-interceptor-chain)
+        (apply [39]))
+    ; 39 + (:enter x) + handler + (:leave x) => 42
+    => 42))
+
+#_
+(deftest drop-interceptor-test
+  (fact ":a drops interceptor :b from chain"
+    ; use default :b, the one that fails an all stages. If :b is not removed
+    ; then this test would fail.
+    (-> test-chain
+        (assoc-in [a-index :enter] (fn [ctx] (update ctx :stack next)))
+        (assoc-in [c-index :enter] identity)
+        (assoc-in [h-index] inc)
+        (assoc-in [c-index :leave] identity)
+        (assoc-in [a-index :leave] identity)
+        (compile-interceptor-chain)
+        (apply [41]))
+    => 42))
+
+#_
+(deftest terminate-by-truncating-stack-test
+  (fact ":b stops execution by truncating the stack"
+    ; use default :b and :c. If :b or :c is not removed
+    ; then this test would fail.
+    (-> test-chain
+        (assoc-in [a-index :enter] identity)
+        (assoc-in [b-index :enter] (fn [ctx] (dissoc ctx :stack)))
+        (assoc-in [a-index :leave] identity)
+        (compile-interceptor-chain)
+        (apply [41]))
+    => nil))

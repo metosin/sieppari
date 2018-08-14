@@ -1,4 +1,4 @@
-(ns sieppari.filtering)
+(ns sieppari.util.filtering)
 
 (defn applies-to [target]
   (fn [interceptor]

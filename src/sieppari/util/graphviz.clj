@@ -1,4 +1,4 @@
-(ns sieppari.sieppari.util.graphviz
+(ns sieppari.util.graphviz
   (:require [ubergraph.core :as uber]))
 
 ;; TODO: Add possible other meta information from interceptors to graphs.
