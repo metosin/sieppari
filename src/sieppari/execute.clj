@@ -2,7 +2,7 @@
   (:require [sieppari.util :as u])
   (:import (clojure.lang PersistentQueue)))
 
-(defrecord Context [request response queue stack])
+(defrecord Context [request response error queue stack])
 
 (defn- leave [ctx stack stage]
   (let [it (clojure.lang.RT/iter stack)]
