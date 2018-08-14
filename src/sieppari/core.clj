@@ -37,13 +37,20 @@
   (-interceptor [t]
     nil))
 
+
 ;;
 ;; Public API:
 ;;
+
+(defn into-interceptor
+  "Accepts an interceptor map, Interceptor, nil or
+  handler function, returns an Interceptor record."
+  [t]
+  (-interceptor t))
 
 (defn into-interceptors
   "Accepts a seq of interceptor maps, Interceptors, nils or
   handler functions, returns a seq of Interceptor records with
   nils removed."
   [interceptors]
-  (keep -interceptor interceptors))
+  (keep into-interceptor interceptors))
