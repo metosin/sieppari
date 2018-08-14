@@ -1,37 +1,47 @@
 (ns sieppari.execute
-  (:require [sieppari.util :as u]))
+  (:require [sieppari.util :as u])
+  (:import (clojure.lang PersistentQueue)))
+
+(defrecord Context [request response queue stack])
+
+(defn- leave [ctx stack stage]
+  (let [it (clojure.lang.RT/iter stack)]
+    (loop [ctx ctx, stage stage]
+      (if (.hasNext it)
+        (if-let [f (-> it .next stage)]
+          (let [ctx (u/try-f ctx f)
+                stage (if (:error ctx) :error :leave)]
+            (recur ctx stage))
+          (recur ctx stage))
+        ctx))))
 
 (defn- enter [ctx]
-  (if-let [interceptor (-> ctx :stack first)]
-    (let [ctx (-> ctx
-                  (update :stack next)
-                  (u/try-f (:enter interceptor)))]
-      (if (or (-> ctx :response)
-              (-> ctx :error)
-              (-> ctx :stack (empty?)))
-        ctx
-        (-> ctx
-            (update ::done conj interceptor)
-            (recur))))
-    ctx))
+  (let [queue ^clojure.lang.PersistentQueue (:queue ctx)
+        stack (:stack ctx)
+        error (:error ctx)
+        interceptor (peek queue)]
+    (cond
 
-(defn- leave [ctx]
-  (if-let [interceptor (-> ctx :stack first)]
-    (-> ctx
-        (update :stack next)
-        (u/try-f ((if (:error ctx) :error :leave) interceptor))
-        (recur))
-    ctx))
+      (not interceptor)
+      (leave ctx stack :leave)
 
-(defn- swap-direction [ctx]
-  (assoc ctx :stack (::done ctx)))
+      error
+      (leave (assoc ctx :queue nil) stack :error)
+
+      :else
+      (let [queue (pop queue)
+            stack (conj stack interceptor)
+            f (or (:enter interceptor) identity)
+            ctx (-> ctx
+                    (assoc :queue queue)
+                    (assoc :stack stack)
+                    (u/try-f f))]
+        (recur ctx)))))
 
 (defn execute [interceptors request]
-  (-> {:request request
-       :stack (seq interceptors)
-       ::done ()}
+  (-> (map->Context
+        {:request request
+         :queue (into PersistentQueue/EMPTY interceptors)})
       (enter)
-      (swap-direction)
-      (leave)
       (u/throw-if-error!)
       :response))
