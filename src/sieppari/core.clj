@@ -24,6 +24,11 @@
                              (->> (handler (:request ctx))
                                   (assoc ctx :response))))))
 
+  ; Handle `[interceptor-function "foo"]` case:
+  clojure.lang.IPersistentVector
+  (-interceptor [t]
+    (-interceptor (apply (first t) (rest t))))
+
   Interceptor
   (-interceptor [t]
     t)
