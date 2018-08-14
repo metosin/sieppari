@@ -156,3 +156,29 @@
         (ses/execute 39))
     ; 39 + (:enter x) + handler + (:leave x) => 42
     => 42))
+
+(deftest drop-interceptor-test
+  (fact ":a drops interceptor :b from chain"
+    ; use default :b, the one that fails an all stages. If :b is not removed
+    ; then this test would fail.
+    (-> test-chain
+        (assoc-in [a-index :enter] (fn [ctx] (update ctx :stack next)))
+        (assoc-in [c-index :enter] identity)
+        (assoc-in [h-index] inc)
+        (assoc-in [c-index :leave] identity)
+        (assoc-in [a-index :leave] identity)
+        (sc/into-interceptors)
+        (ses/execute 41))
+    => 42))
+
+(deftest terminate-by-truncating-stack-test
+  (fact ":b stops execution by truncating the stack"
+    ; use default :b and :c. If :b or :c is not removed
+    ; then this test would fail.
+    (-> test-chain
+        (assoc-in [a-index :enter] identity)
+        (assoc-in [b-index :enter] (fn [ctx] (dissoc ctx :stack)))
+        (assoc-in [a-index :leave] identity)
+        (sc/into-interceptors)
+        (ses/execute 41))
+    => nil))
