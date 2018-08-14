@@ -31,8 +31,7 @@
    :leave (unexpected name :leave)
    :error (unexpected name :error)})
 
-; Test stack with three interceptors and a handler that produces
-; a response with `(inc request)`:
+; Test stack with three interceptors and a handler:
 
 (def test-chain [(make-test-interceptor :a)
                  (make-test-interceptor :b)
