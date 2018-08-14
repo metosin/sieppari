@@ -3,7 +3,9 @@
 
 (defn- enter [ctx]
   (if-let [interceptor (-> ctx :stack first)]
-    (let [ctx ((:enter interceptor) (update ctx :stack next))]
+    (let [ctx (-> ctx
+                  (update :stack next)
+                  (u/try-f (:enter interceptor)))]
       (if (or (-> ctx :response)
               (-> ctx :error)
               (-> ctx :stack (empty?)))
@@ -15,9 +17,10 @@
 
 (defn- leave [ctx]
   (if-let [interceptor (-> ctx :stack first)]
-    (let [ctx (update ctx :stack next)
-          stage (if (:error ctx) :error :leave)]
-      (recur ((stage interceptor) ctx)))
+    (-> ctx
+        (update :stack next)
+        (u/try-f ((if (:error ctx) :error :leave) interceptor))
+        (recur))
     ctx))
 
 (defn- swap-direction [ctx]

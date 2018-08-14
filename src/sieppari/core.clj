@@ -10,9 +10,7 @@
   ; Map -> Interceptor:
   clojure.lang.IPersistentMap
   (-interceptor [interceptor-map]
-    (-> interceptor-map
-        (u/wrap-interceptor-fns)
-        (map->Interceptor)))
+    (map->Interceptor interceptor-map))
 
   ; Function -> Handler interceptor:
   clojure.lang.Fn

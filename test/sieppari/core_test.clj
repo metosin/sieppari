@@ -16,12 +16,6 @@
   (fact "result is  record"
     (-interceptor {}) => Interceptor)
 
-  (fact "defaults are applied"
-    (-interceptor {}) => {:name nil
-                          :enter fn?
-                          :leave fn?
-                          :error fn?})
-
   (fact "functions can be made to interceptors"
     (-interceptor str) => {:enter fn?})
 
