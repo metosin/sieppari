@@ -1,7 +1,7 @@
 (ns sieppari.execute-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.core :as sc]
+            [sieppari.core :as s]
             [sieppari.execute :as se]))
 
 
@@ -74,7 +74,7 @@
         (assoc-in [c-index :leave] identity)
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => 42))
 
@@ -84,7 +84,7 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] always-throw)
         (assoc-in [a-index :error] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => (throws-ex-info "oh no")))
 
@@ -96,7 +96,7 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] (handle-error :fixed-by-a))
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => :fixed-by-a))
 
@@ -108,7 +108,7 @@
         (assoc-in [c-index :enter] always-throw)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => :fixed-by-b))
 
@@ -122,7 +122,7 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => :fixed-by-b))
 
@@ -132,7 +132,7 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] (fn [ctx] (assoc ctx :response :response-by-b)))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => :response-by-b))
 
@@ -151,7 +151,7 @@
         (assoc-in [c-index :leave] identity)
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 39))
     ; 39 + (:enter x) + handler + (:leave x) => 42
     => 42))
@@ -166,7 +166,7 @@
         (assoc-in [h-index] inc)
         (assoc-in [c-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
     => 42))
 
@@ -176,8 +176,35 @@
     ; then this test would fail.
     (-> test-chain
         (assoc-in [a-index :enter] identity)
-        (assoc-in [b-index :enter] (fn [ctx] (dissoc ctx :stack)))
+        (assoc-in [b-index :enter] (fn [ctx] (s/terminate ctx :terminated-by-b)))
         (assoc-in [a-index :leave] identity)
-        (sc/into-interceptors)
+        (s/into-interceptors)
         (se/execute 41))
-    => nil))
+    => :terminated-by-b))
+
+(defn make-logging-interceptor [name]
+  {:name name
+   :enter (fn [ctx]
+            (update ctx :request conj [:enter name]))
+   :leave (fn [ctx]
+            (update ctx :response conj [:leave name]))})
+
+(defn logging-handler [request]
+  (conj request [:handler]))
+
+(deftest add-interceptor-with-correct-order-test
+  (fact ":b adds interceptor :x to chain, ensure the order is correct"
+    (-> [(make-logging-interceptor :a)
+         {:enter (fn [ctx]
+                   (s/inject ctx (make-logging-interceptor :x)))}
+         (make-logging-interceptor :c)
+         logging-handler]
+        (s/into-interceptors)
+        (se/execute []))
+    => [[:enter :a]
+        [:enter :x]
+        [:enter :c]
+        [:handler]
+        [:leave :c]
+        [:leave :x]
+        [:leave :a]]))

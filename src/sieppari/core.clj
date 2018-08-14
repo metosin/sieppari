@@ -52,3 +52,18 @@
   nils removed."
   [interceptors]
   (keep into-interceptor interceptors))
+
+;;
+;; Stack manipulation helpers:
+;;
+
+(defn terminate
+  ([ctx]
+    (assoc ctx :stack nil))
+  ([ctx response]
+    (-> ctx
+        (assoc :stack nil)
+        (assoc :response response))))
+
+(defn inject [ctx interceptor]
+  (update ctx :stack conj interceptor))
