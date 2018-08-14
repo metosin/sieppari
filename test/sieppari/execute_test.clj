@@ -141,12 +141,11 @@
     (-> test-chain
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] (fn [ctx]
-                                     (update ctx :stack conj (sc/into-interceptor
-                                                               (assoc (make-test-interceptor :x)
-                                                                 :enter (fn [ctx]
-                                                                          (update ctx :request inc))
-                                                                 :leave (fn [ctx]
-                                                                          (update ctx :response inc)))))))
+                                     (update ctx :stack conj (assoc (make-test-interceptor :x)
+                                                               :enter (fn [ctx]
+                                                                        (update ctx :request inc))
+                                                               :leave (fn [ctx]
+                                                                        (update ctx :response inc))))))
         (assoc-in [c-index :enter] identity)
         (assoc-in [h-index] inc)
         (assoc-in [c-index :leave] identity)

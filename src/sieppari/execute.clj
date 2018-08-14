@@ -1,11 +1,9 @@
 (ns sieppari.execute
-  (:require [sieppari.core]
-            [sieppari.util :as u])
-  (:import (sieppari.core Interceptor)))
+  (:require [sieppari.util :as u]))
 
 (defn- enter [ctx]
-  (if-let [^Interceptor interceptor (-> ctx :stack first)]
-    (let [ctx ((.enter interceptor) (update ctx :stack next))]
+  (if-let [interceptor (-> ctx :stack first)]
+    (let [ctx ((:enter interceptor) (update ctx :stack next))]
       (if (or (-> ctx :response)
               (-> ctx :error)
               (-> ctx :stack (empty?)))
@@ -16,11 +14,10 @@
     ctx))
 
 (defn- leave [ctx]
-  (if-let [^Interceptor interceptor (-> ctx :stack first)]
-    (let [ctx (update ctx :stack next)]
-      (recur (if (:error ctx)
-               ((.error interceptor) ctx)
-               ((.leave interceptor) ctx))))
+  (if-let [interceptor (-> ctx :stack first)]
+    (let [ctx (update ctx :stack next)
+          stage (if (:error ctx) :error :leave)]
+      (recur ((stage interceptor) ctx)))
     ctx))
 
 (defn- swap-direction [ctx]
