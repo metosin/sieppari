@@ -21,6 +21,7 @@
         async-compiled (sac/compile-interceptor-chain s-chain)]
     (println "\n\nn =" n)
 
+    #_#_
     (println "\n\npedestal:")
     (criterium/quick-bench
       (-> {}
@@ -31,6 +32,7 @@
     (criterium/quick-bench
       (se/execute s-chain {}))
 
+    #_#_
     (println "\n\nsiepari compiled:")
     (criterium/quick-bench
       (compiled {}))

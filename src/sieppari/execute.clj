@@ -25,7 +25,8 @@
 
 (defn execute [interceptors request]
   (-> {:request request
-       :stack (seq interceptors)}
+       :stack (seq interceptors)
+       ::done ()}
       (enter)
       (swap-direction)
       (leave)
