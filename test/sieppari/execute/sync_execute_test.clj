@@ -135,3 +135,24 @@
         (sc/into-interceptors)
         (ses/execute 41))
     => :response-by-b))
+
+(deftest add-interceptor-test
+  (fact ":b adds interceptor :x to chain, :x calls inc on response on enter and leave"
+    (-> test-chain
+        (assoc-in [a-index :enter] identity)
+        (assoc-in [b-index :enter] (fn [ctx]
+                                     (update ctx :stack conj (sc/into-interceptor
+                                                               (assoc (make-test-interceptor :x)
+                                                                 :enter (fn [ctx]
+                                                                          (update ctx :request inc))
+                                                                 :leave (fn [ctx]
+                                                                          (update ctx :response inc)))))))
+        (assoc-in [c-index :enter] identity)
+        (assoc-in [h-index] inc)
+        (assoc-in [c-index :leave] identity)
+        (assoc-in [b-index :leave] identity)
+        (assoc-in [a-index :leave] identity)
+        (sc/into-interceptors)
+        (ses/execute 39))
+    ; 39 + (:enter x) + handler + (:leave x) => 42
+    => 42))
