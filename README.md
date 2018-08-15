@@ -44,7 +44,7 @@ _Sieppari_ depends on Clojure and nothing else.
 
 If you are new to interceptors, check the
 [Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
-If you are familiar with interceptors you might want to jump to [Differences to Pedestal].
+If you are familiar with interceptors you might want to jump to [#Differences to Pedestal].
 
 # Performance
 
