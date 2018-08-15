@@ -16,7 +16,6 @@
         s-chain (s/into-interceptors interceptors)]
     (println "\n\nn =" n)
 
-    #_#_
     (println "\n\npedestal:")
     (criterium/quick-bench
       (-> {}
