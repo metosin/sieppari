@@ -1,4 +1,5 @@
-(ns sieppari.interceptor)
+(ns sieppari.interceptor
+  (:require [sieppari.async :as a]))
 
 (defrecord Interceptor [name enter leave error])
 
@@ -15,9 +16,10 @@
   clojure.lang.Fn
   (-interceptor [handler]
     (-interceptor {:enter (fn [ctx]
-                            (->> (:request ctx)
-                                 (handler)
-                                 (assoc ctx :response)))}))
+                            (let [response (handler (:request ctx))]
+                              (if (a/async? response)
+                                (a/continue response (partial assoc ctx :response))
+                                (assoc ctx :response response))))}))
 
   ; Vector -> Interceptor, first element is a function to create
   ; the interceptor, rest are arguments for it:

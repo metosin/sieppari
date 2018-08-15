@@ -1,5 +1,5 @@
 (ns example.simple
-  (:require [sieppari.chain :as s]))
+  (:require [sieppari.core :as s]))
 
 (def times-2-interceptor
   {:enter (fn [ctx] (update-in ctx [:request :x] * 2))})

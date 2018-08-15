@@ -1,6 +1,6 @@
 (ns example.perf-testing
   (:require [criterium.core :as criterium]
-            [sieppari.chain :as sc]
+            [sieppari.core :as s]
             [sieppari.queue :as sq]
             [io.pedestal.interceptor :as pi]
             [io.pedestal.interceptor.chain :as pc]))
@@ -24,7 +24,7 @@
 
     (println "\n\nsieppari execute:")
     (criterium/quick-bench
-      (sc/execute s-chain {}))
+      (s/execute s-chain {}))
     ))
 
 (defn -main [& _]

@@ -1,35 +1,71 @@
 (ns sieppari.core
-  (:require [sieppari.queue :as q])
-  (:import (clojure.lang PersistentQueue)))
+  (:require [sieppari.async :as a]
+            [sieppari.queue :as q])
+  (:import (java.util Iterator)))
 
-(defn terminate
-  "Removes all remaining interceptors from context's execution queue.
-  This effectively short-circuits execution of Interceptors' :enter
-  functions and begins executing the :leave functions.
-  Two arity version allows setting the response at the same call."
-  ([ctx]
-   (assoc ctx :queue PersistentQueue/EMPTY))
-  ([ctx response]
-   (-> ctx
-       (assoc :queue PersistentQueue/EMPTY)
-       (assoc :response response))))
+(defrecord Context [request response error queue stack])
 
-(defn inject
-  "Adds interceptor or seq of interceptors to the head of context's execution queue. Creates
-  the queue if necessary. Returns updated context."
-  [ctx interceptor-or-interceptors]
-  (let [interceptors (if (sequential? interceptor-or-interceptors)
-                       interceptor-or-interceptors
-                       (cons interceptor-or-interceptors nil))]
-    (assoc ctx :queue (q/into-queue (concat interceptors (:queue ctx))))))
+(defn- try-f [ctx f]
+  (if f
+    (try
+      (f ctx)
+      (catch Exception e
+        (assoc ctx :error e)))
+    ctx))
 
-; TODO: figure out how enqueue should work? Should enqueue add interceptors just
-#_
-(defn enqueue
-  "Adds interceptor or seq of interceptors to the end of context's execution queue. Creates
-  the queue if necessary. Returns updated context."
-  [ctx interceptor-or-interceptors]
-  (let [interceptors (into-interceptors (if (sequential? interceptor-or-interceptors)
-                                          interceptor-or-interceptors
-                                          [interceptor-or-interceptors]))]
-    (update ctx :queue (fnil into PersistentQueue/EMPTY) interceptors)))
+(defn- throw-if-error! [ctx]
+  (when-let [e (:error ctx)]
+    (throw e))
+  ctx)
+
+(defn- finnish [ctx]
+  (if (a/async? ctx)
+    (a/continue ctx finnish)
+    (-> ctx
+        (throw-if-error!)
+        :response)))
+
+(defn- leave [stage ^Iterator it ctx]
+  (if (a/async? ctx)
+    (a/continue ctx (partial leave stage it))
+    (if (.hasNext it)
+      (let [ctx (try-f ctx (-> it .next stage))]
+        (recur (if (:error ctx) :error :leave) it ctx))
+      (finnish ctx))))
+
+(defn- enter [ctx]
+  (if (a/async? ctx)
+    (a/continue ctx enter)
+    (let [queue ^clojure.lang.PersistentQueue (:queue ctx)
+          stack (:stack ctx)
+          interceptor (peek queue)]
+      (cond
+
+        (not interceptor)
+        (leave :leave (clojure.lang.RT/iter stack) ctx)
+
+        (:error ctx)
+        (leave :error (clojure.lang.RT/iter stack) ctx)
+
+        :else
+        (recur (-> ctx
+                   (assoc :queue (pop queue))
+                   (assoc :stack (conj stack interceptor))
+                   (try-f (:enter interceptor))))))))
+
+;;
+;; Public API:
+;;
+
+(defn execute
+  ([interceptors request]
+   (let [response (promise)]
+     (-> (new Context request nil nil (q/into-queue interceptors) nil)
+         (enter)
+         (a/continue (partial deliver response)))
+     (deref response)))
+  ([interceptors request on-complete]
+   (-> (new Context request nil nil (q/into-queue interceptors) nil)
+       (enter)
+       (a/continue on-complete))
+   nil))
