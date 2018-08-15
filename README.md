@@ -44,14 +44,6 @@ If you are new to interceptors, check the
 [Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
 If you are familiar with interceptors you might want to jump to [Differences to Pedestal].
 
-# Quick how-to
-
-TODO:
-* stage functions enter, leave, error
-* handler
-* handling errors
-* terminating enter stage
-
 # Performance
 
 _Sieppari_ aims for minimal functionality and can therefore be
@@ -73,29 +65,13 @@ executes the chain.
 
 # Differences to Pedestal
 
-## Manipulation of the interceptor chain
-
-Pedestal allows interceptors to manipulate the interceptor stack.
-This library does not allow that.
-
-## Terminating the **enter** stage
-
-In _Pedestal_, to terminate the execution of an interceptor chain in 
-**enter** stage you call the [terminate](http://pedestal.io/api/pedestal.interceptor/io.pedestal.interceptor.chain.html#var-terminate)
-function. This clears the execution stack and begins the **leave**
-stage.
-
-In _Sieppari_, if the `enter` function returns a `ctx` with 
-non-nil value under `:response` key, the **enter** stage is 
-terminated and the **leave** stage begins.
-
 ## The **error** handler
 
 In _Pedestal_ the `error` handler takes two arguments, the `ctx` and
 the exception.
 
 In _Sieppari_ the `error` handlers takes just one argument, the `ctx`,
-and the exception is in `ctx` under the key `:error`.
+and the exception is in the `ctx` under the key `:error`.
 
 In _Pedestal_ the `error` handler resolves the exception by returning
 the `ctx`, and continues the **error** stage by re-throwing the exception.
@@ -108,9 +84,11 @@ In _Pedestal_ the exception are wrapped in other exceptions.
 
 In _Sieppari_ exceptions are not wrapped.
 
-_Pedestal_ catches `java.lang.Throwable` for error processing. _Sieppari_
-catches `java.lang.Exception`. This means that things like out of memory or
-class loader failures are not captured by _Sieppari_.
+_Pedestal_ interception execution catches `java.lang.Throwable` for error 
+processing. _Sieppari_ catches `java.lang.Exception`. This means that things 
+like out of memory or class loader failures are not captured by _Sieppari_.
+
+## Async
 
 _Pedestal_ has built in support for `core.async`.
 
