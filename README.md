@@ -64,8 +64,8 @@ executes the chain.
 
 | Executor      | Execution time lower quantile |
 | ------------- | ----------------------------- |
-| Pedestal      | 66.287774                     |
-| Sieppari      | 12.594058 µs                  |
+| Pedestal      | 62.650689 µs                  |
+| Sieppari      | 14.231854 µs                  |
 
 * MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
 * Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
