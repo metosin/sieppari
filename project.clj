@@ -1,22 +1,17 @@
 (defproject metosin/sieppari "0.0.0-SNAPSHOT"
   :dependencies []
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
-                                  ;; Optional deps: (todo: Move to sub-modules)
-                                  [ubergraph "0.5.1" :scope "provided"]
-                                  [org.clojure/core.async "0.4.474"]
                                   ;; Dev:
                                   [org.clojure/tools.namespace "0.2.11"]
                                   ;; Testing:
                                   [eftest "0.5.2"]
-                                  [metosin/testit "0.4.0-SNAPSHOT"]
-                                  ;; Perf tessting:
-                                  [criterium "0.4.4"]
-                                  [metosin/ring-http-response "0.9.0"]
-                                  [io.pedestal/pedestal.interceptor "0.5.4"]
-                                  [org.slf4j/slf4j-nop "1.7.25"]]
+                                  [metosin/testit "0.4.0-SNAPSHOT"]]
                    :source-paths ["dev"]}
              :examples {:source-paths ["examples"]}
-             :perf {:jvm-opts ^:replace ["-server"
+             :perf {:dependencies [[criterium "0.4.4"]
+                                   [io.pedestal/pedestal.interceptor "0.5.4"]
+                                   [org.slf4j/slf4j-nop "1.7.25"]]
+                    :jvm-opts ^:replace ["-server"
                                          "-Xms4096m"
                                          "-Xmx4096m"
                                          "-Dclojure.compiler.direct-linking=true"]}}

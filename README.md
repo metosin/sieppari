@@ -14,6 +14,8 @@ Small, fast, and complete interceptor library.
 Interceptors, like in [Pedestal](http://pedestal.io/reference/interceptors), but
 with minimal implementation and optimal performance.
 
+_Sieppari_ depends on Clojure and nothing else.
+
 ## First example
 
 ```clj
