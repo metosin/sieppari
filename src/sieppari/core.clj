@@ -13,25 +13,14 @@
         (assoc ctx :error e)))
     ctx))
 
-(defn- throw-if-error! [ctx]
-  (when-let [e (:error ctx)]
-    (throw e))
-  ctx)
-
-(defn- finnish [ctx]
+(defn- leave [^Iterator it ctx]
   (if (a/async? ctx)
-    (a/continue ctx finnish)
-    (-> ctx
-        (throw-if-error!)
-        :response)))
-
-(defn- leave [stage ^Iterator it ctx]
-  (if (a/async? ctx)
-    (a/continue ctx (partial leave stage it))
+    (a/continue ctx (partial leave it))
     (if (.hasNext it)
-      (let [ctx (try-f ctx (-> it .next stage))]
-        (recur (if (:error ctx) :error :leave) it ctx))
-      (finnish ctx))))
+      (let [stage (if (:error ctx) :error :leave)
+            f (-> it .next stage)]
+        (recur it (try-f ctx f)))
+      ctx)))
 
 (defn- enter [ctx]
   (if (a/async? ctx)
@@ -42,10 +31,10 @@
       (cond
 
         (not interceptor)
-        (leave :leave (clojure.lang.RT/iter stack) ctx)
+        (leave (clojure.lang.RT/iter stack) ctx)
 
         (:error ctx)
-        (leave :error (clojure.lang.RT/iter stack) ctx)
+        (leave (clojure.lang.RT/iter stack) ctx)
 
         :else
         (recur (-> ctx
@@ -53,19 +42,36 @@
                    (assoc :stack (conj stack interceptor))
                    (try-f (:enter interceptor))))))))
 
+(defn- wait-result [ctx]
+  (if (a/async? ctx)
+    (let [p (promise)]
+      (a/continue ctx (fn [ctx] (deliver p (wait-result ctx))))
+      (deref p))
+    ctx))
+
+(defn- deliver-result [ctx on-complete]
+  (if (a/async? ctx)
+    (a/continue ctx (fn [ctx] (deliver-result ctx on-complete)))
+    (on-complete (:response ctx))))
+
+(defn- throw-if-error! [ctx]
+  (when-let [e (:error ctx)]
+    (throw e))
+  ctx)
+
 ;;
 ;; Public API:
 ;;
 
 (defn execute
   ([interceptors request]
-   (let [response (promise)]
-     (-> (new Context request nil nil (q/into-queue interceptors) nil)
-         (enter)
-         (a/continue (partial deliver response)))
-     (deref response)))
+   (-> (new Context request nil nil (q/into-queue interceptors) nil)
+       (enter)
+       (wait-result)
+       (throw-if-error!)
+       :response))
   ([interceptors request on-complete]
    (-> (new Context request nil nil (q/into-queue interceptors) nil)
        (enter)
-       (a/continue on-complete))
+       (deliver-result on-complete))
    nil))
