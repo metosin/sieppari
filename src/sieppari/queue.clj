@@ -13,7 +13,7 @@
   Object
   (-into-queue [t]
     (into PersistentQueue/EMPTY
-          (map i/into-interceptor)
+          (keep i/into-interceptor)
           t)))
 
 (defn into-queue [t]
