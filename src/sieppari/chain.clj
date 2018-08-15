@@ -49,7 +49,7 @@
   ([interceptors request]
    (-> (new Context request nil nil (q/into-queue interceptors) nil)
        (enter)
-       (a/continue identity)))
+       (a/await)))
   ([interceptors request on-complete]
    (-> (new Context request nil nil (q/into-queue interceptors) nil)
        (enter)
