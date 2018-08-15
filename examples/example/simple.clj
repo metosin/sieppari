@@ -1,28 +1,28 @@
 (ns example.simple
-  (:require [sieppari.core :as sc]
+  (:require [sieppari.core :as s]
             [sieppari.execute :as se]))
 
 ;;
 ;; Demonstrate functionality, mainly for documentation purposes:
 ;;
 
-;; Simple interceptor, in enter update value in `[:request :in]` with `inc`:
+;; Simple interceptor, in enter update value in `[:request :x]` with `inc`:
 
-(def inc-in-interceptor
+(def inc-x-interceptor
   {:enter (fn [ctx]
-            (update-in ctx [:request :in] inc))})
+            (update-in ctx [:request :x] inc))})
 
-;; Simple handler, take `:in` from request, apply `inc`, and
-;; return an map with `:out`.
+;; Simple handler, take `:x` from request, apply `inc`, and
+;; return an map with `:y`.
 
 (defn handler [request]
-  {:out (inc (:in request))})
+  {:y (inc (:x request))})
 
-(def interceptor-chain (sc/into-interceptors [inc-in-interceptor
-                                              handler]))
+(def interceptor-chain (s/into-interceptors [inc-x-interceptor
+                                             handler]))
 
-(se/execute interceptor-chain {:in 40})
-;=> {:out 42}
+(se/execute interceptor-chain {:x 40})
+;=> {:y 42}
 
 ;;
 ;; Simple example:
@@ -34,7 +34,7 @@
    :error (fn [ctx] (println "ERROR:" name) ctx)})
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [(make-interceptor :a)
      (make-interceptor :b)
      (make-interceptor :c)
@@ -58,7 +58,7 @@
 ;;
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [(make-interceptor :a)
      (make-interceptor :b)
      (make-interceptor :c)
@@ -83,14 +83,13 @@
 ;;
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [(make-interceptor :a)
      (-> (make-interceptor :b)
          (assoc :error (fn [ctx]
                          (println "ERROR: :b - this handles the exception")
-                         (-> ctx
-                             (dissoc :error)
-                             (assoc :response :fixed-by-b)))))
+                         (assoc ctx :response :fixed-by-b
+                                    :error nil))))
      (make-interceptor :c)
      (fn [request]
        (println "HANDLER: request =" (pr-str request))
@@ -112,7 +111,7 @@
 ;;
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [(make-interceptor :a)
      (-> (make-interceptor :b)
          (assoc :enter (fn [ctx]
@@ -141,7 +140,7 @@
    :error (fn [ctx] (update ctx :log conj [:error name]))})
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [{:enter (fn [ctx]
                (assoc ctx :log []))}
      (make-interceptor :a)
@@ -161,7 +160,7 @@
 ;;
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [{:enter (fn [ctx]
                (assoc ctx :log []))}
      (make-interceptor :a)
@@ -182,7 +181,7 @@
 ;;
 
 (def interceptor-chain
-  (sc/into-interceptors
+  (s/into-interceptors
     [{:enter (fn [ctx]
                (assoc ctx :log []))
       :leave (fn [ctx]
