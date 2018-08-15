@@ -1,7 +1,6 @@
 # sieppari
 
-Small [interceptor](http://pedestal.io/reference/interceptors) library with built-in 
-dependency sorting and applicability filtering.
+Small, fast, and complete interceptor library.
 
 > Noun
 > **Siepata (Intercept)**
@@ -12,8 +11,8 @@ dependency sorting and applicability filtering.
 
 ## What it does
 
-Interceptors, like in [Pedestal](http://pedestal.io/), but
-with optional filtering and automatic dependency sorting.
+Interceptors, like in [Pedestal](http://pedestal.io/reference/interceptors), but
+with minimal implementation and optimal performance.
 
 ## First example
 
