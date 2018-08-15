@@ -1,17 +1,23 @@
 (ns sieppari.queue
-  (:require [sieppari.interceptor :as i])
-  (:import (clojure.lang PersistentQueue)))
+  (:require [sieppari.interceptor :as i]))
 
 (defprotocol IntoQueue
   (into-queue [t]))
 
+(defn- -into-queue [t]
+  (into clojure.lang.PersistentQueue/EMPTY
+        (keep i/into-interceptor)
+        t))
+
 (extend-protocol IntoQueue
-  PersistentQueue
+  clojure.lang.PersistentQueue
   (into-queue [t]
     t)
 
-  Object
+  clojure.lang.Seqable
   (into-queue [t]
-    (into PersistentQueue/EMPTY
-          (keep i/into-interceptor)
-          t)))
+    (-into-queue (seq t)))
+
+  clojure.lang.ISeq
+  (into-queue [t]
+    (-into-queue t)))
