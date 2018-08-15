@@ -1,10 +1,9 @@
 (ns sieppari.core.async-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.context :as s]
             [sieppari.core :as sc]
             [sieppari.async :as sa]
-            [clojure.core.async :as a :refer [go <! <!!]]))
+            [clojure.core.async :refer [go <!]]))
 
 ;;
 ;; TODO: Move async stuff to its own module.

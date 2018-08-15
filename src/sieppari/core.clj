@@ -42,36 +42,31 @@
                    (assoc :stack (conj stack interceptor))
                    (try-f (:enter interceptor))))))))
 
-(defn- wait-result [ctx]
-  (if (a/async? ctx)
-    (let [p (promise)]
-      (a/continue ctx (fn [ctx] (deliver p (wait-result ctx))))
-      (deref p))
-    ctx))
-
-(defn- deliver-result [ctx on-complete]
-  (if (a/async? ctx)
-    (a/continue ctx (fn [ctx] (deliver-result ctx on-complete)))
-    (on-complete (:response ctx))))
-
 (defn- throw-if-error! [ctx]
   (when-let [e (:error ctx)]
     (throw e))
   ctx)
+
+(defn- deliver-result [ctx on-complete]
+  (if (a/async? ctx)
+    (a/continue ctx (fn [ctx] (deliver-result ctx on-complete)))
+    (on-complete ctx)))
 
 ;;
 ;; Public API:
 ;;
 
 (defn execute
-  ([interceptors request]
-   (-> (new Context request nil nil (q/into-queue interceptors) nil)
-       (enter)
-       (wait-result)
-       (throw-if-error!)
-       :response))
   ([interceptors request on-complete]
    (-> (new Context request nil nil (q/into-queue interceptors) nil)
        (enter)
-       (deliver-result on-complete))
-   nil))
+       (deliver-result (comp on-complete :result)))
+   nil)
+  ([interceptors request]
+   (let [p (promise)]
+     (-> (new Context request nil nil (q/into-queue interceptors) nil)
+         (enter)
+         (deliver-result (partial deliver p)))
+     (-> (deref p)
+         (throw-if-error!)
+         :response))))
