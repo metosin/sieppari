@@ -2,23 +2,18 @@
   (:require [criterium.core :as criterium]
             [sieppari.core :as s]
             [sieppari.execute :as se]
-            [sieppari.compile :as sc]
-            [sieppari.core-async.compile :as sac]
             [io.pedestal.interceptor :as pi]
-            [io.pedestal.interceptor.chain :as pc]
-            [clojure.core.async :refer [<!!]]))
+            [io.pedestal.interceptor.chain :as pc]))
 
 (defn run-simple-perf-test [n]
-  (let [interceptors (concat (repeatedly n (constantly {:enter identity
-                                                        :leave identity
-                                                        :error identity}))
+  ; Pedestal requires that at least one of :enter, :leave or :error is defined:
+  (let [interceptor {:error identity}
+        interceptors (concat (repeat n interceptor)
                              [identity])
         p-chain (->> interceptors
                      (map pi/interceptor)
                      (doall))
-        s-chain (s/into-interceptors interceptors)
-        compiled (sc/compile-interceptor-chain s-chain)
-        async-compiled (sac/compile-interceptor-chain s-chain)]
+        s-chain (s/into-interceptors interceptors)]
     (println "\n\nn =" n)
 
     #_#_
@@ -31,15 +26,6 @@
     (println "\n\nsieppari execute:")
     (criterium/quick-bench
       (se/execute s-chain {}))
-
-    #_#_
-    (println "\n\nsiepari compiled:")
-    (criterium/quick-bench
-      (compiled {}))
-
-    ;(println "\n\nsiepari async compiled:")
-    ;(criterium/quick-bench
-    ;  (<!! (async-compiled {})))
     ))
 
 (defn -main [& _]
@@ -57,5 +43,48 @@
   ;
   ; sieppari compiled:
   ;=> Execution time lower quantile : 3.981034 µs
+
+  )
+
+;;
+;; How?
+;;
+
+(comment
+
+  ; Does P call :error in interceptor if same interceptor :enter fails:
+  ; Yes
+
+  (->> [{:name :a
+        :error (fn [ctx e] (println ":a error") ctx)}
+       {:name :b
+        :enter (fn [ctx] (throw (ex-info "oh no" {})))
+        :error (fn [ctx e] (println ":b error") (throw e))}]
+      (map pi/interceptor)
+      (pc/execute {})
+      :response)
+
+  ; Prints:
+  ;  :b error
+  ;  :a error
+  ;=> nil
+
+  ; Does P call :leave in interceptor if same interceptor :enter terminates:
+  ; Yes
+
+  (->> [{:name :a
+         :leave (fn [ctx] (println ":a leave") ctx)}
+        {:name :b
+         :enter (fn [ctx] (pc/terminate ctx))
+         :leave (fn [ctx] (println ":b leave") ctx)}]
+       (map pi/interceptor)
+       (pc/execute {})
+       :response)
+
+  ; Prints:
+  ;  :b leave
+  ;  :a leave
+  ;=> nil
+
 
   )

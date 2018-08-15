@@ -58,12 +58,36 @@
 ;;
 
 (defn terminate
+  "Removes all remaining interceptors from context's execution queue.
+  This effectively short-circuits execution of Interceptors' :enter
+  functions and begins executing the :leave functions.
+  Two arity version allows setting the response at the same call."
   ([ctx]
-    (assoc ctx :stack nil))
+    (assoc ctx :queue clojure.lang.PersistentQueue/EMPTY))
   ([ctx response]
     (-> ctx
-        (assoc :stack nil)
+        (assoc :queue clojure.lang.PersistentQueue/EMPTY)
         (assoc :response response))))
 
-(defn inject [ctx interceptor]
-  (update ctx :stack conj interceptor))
+(defn inject
+  "Adds interceptor or seq of interceptors to the head of context's execution queue. Creates
+  the queue if necessary. Returns updated context."
+  [ctx interceptor-or-interceptors]
+  (let [interceptors (into-interceptors (if (sequential? interceptor-or-interceptors)
+                                          interceptor-or-interceptors
+                                          [interceptor-or-interceptors]))
+        queue (into clojure.lang.PersistentQueue/EMPTY
+                    (concat interceptors
+                            (:queue ctx)))]
+    (assoc ctx :queue queue)))
+
+; TODO: figure out how enqueue should work? Should enqueue add interceptors just
+#_
+(defn enqueue
+  "Adds interceptor or seq of interceptors to the end of context's execution queue. Creates
+  the queue if necessary. Returns updated context."
+  [ctx interceptor-or-interceptors]
+  (let [interceptors (into-interceptors (if (sequential? interceptor-or-interceptors)
+                                          interceptor-or-interceptors
+                                          [interceptor-or-interceptors]))]
+    (update ctx :queue (fnil into clojure.lang.PersistentQueue/EMPTY) interceptors)))

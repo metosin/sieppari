@@ -473,8 +473,7 @@ executes the chain.
 | Executor | Execution time lower quantile |
 | ------------- | ------------- |
 | Pedestal | 66.287774 |
-| sieppari.execute.sync  | 9.302867 µs |
-| sieppari.execute.sync-compile | 4.519366 µs |
+| Sieppari  | 12.594058 µs |
 
 * MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
 * Java(TM) SE Runtime Environment (build 1.8.0_151-b12)

@@ -34,3 +34,37 @@
 
   (fact "nil punning"
     (-interceptor nil) => nil))
+
+(deftest terminate-test
+  (let [queue (into clojure.lang.PersistentQueue/EMPTY (into-interceptors [{:name :a} {:name :b}]))]
+    (fact
+      (terminate {:queue queue})
+      => (just {:queue clojure.lang.PersistentQueue/EMPTY}))
+    (fact
+      (terminate {:queue queue} :the-response)
+      => (just {:queue clojure.lang.PersistentQueue/EMPTY
+                :response :the-response}))))
+
+(deftest inject-test
+  (let [queue (into clojure.lang.PersistentQueue/EMPTY (into-interceptors [{:name :a} {:name :b}]))]
+    (fact
+      (inject {:queue queue} {:name :x})
+      => {:queue [{:name :x}
+                  {:name :a}
+                  {:name :b}]})
+    (fact
+      (inject {:queue queue} {:name :x})
+      => {:queue clojure.lang.PersistentQueue})))
+
+; TODO: figure out how enqueue should work? Should enqueue add interceptors just
+#_
+(deftest enqueue-test
+  (let [queue (into clojure.lang.PersistentQueue/EMPTY (into-interceptors [{:name :a} {:name :b}]))]
+    (fact
+      (enqueue {:queue queue} {:name :x})
+      => {:queue [{:name :a}
+                  {:name :b}
+                  {:name :x}]})
+    (fact
+      (enqueue {:queue queue} {:name :x})
+      => {:queue clojure.lang.PersistentQueue})))

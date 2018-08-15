@@ -54,7 +54,7 @@
 
 (defn handle-error [response]
   (fn [ctx]
-    (assert (not (contains? ctx :response)))
+    (assert (not (some? (:response ctx))))
     (assert (-> ctx :error ex-data (= {::error-marker true})))
     (-> ctx
         (dissoc :error)
@@ -83,6 +83,7 @@
     (-> test-chain
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] always-throw)
+        (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] identity)
         (s/into-interceptors)
         (se/execute 41))
@@ -94,6 +95,7 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] identity)
         (assoc-in [c-index :enter] always-throw)
+        (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] (handle-error :fixed-by-a))
         (s/into-interceptors)
@@ -106,6 +108,7 @@
         (assoc-in [a-index :enter] identity)
         (assoc-in [b-index :enter] identity)
         (assoc-in [c-index :enter] always-throw)
+        (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
         (s/into-interceptors)
@@ -130,57 +133,12 @@
   (fact ":b sets the response, no invocation of :c nor :handler"
     (-> test-chain
         (assoc-in [a-index :enter] identity)
-        (assoc-in [b-index :enter] (fn [ctx] (assoc ctx :response :response-by-b)))
+        (assoc-in [b-index :enter] (fn [ctx] (s/terminate ctx :response-by-b)))
+        (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
         (s/into-interceptors)
         (se/execute 41))
     => :response-by-b))
-
-(deftest add-interceptor-test
-  (fact ":b adds interceptor :x to chain, :x calls inc on response on enter and leave"
-    (-> test-chain
-        (assoc-in [a-index :enter] identity)
-        (assoc-in [b-index :enter] (fn [ctx]
-                                     (update ctx :stack conj (assoc (make-test-interceptor :x)
-                                                               :enter (fn [ctx]
-                                                                        (update ctx :request inc))
-                                                               :leave (fn [ctx]
-                                                                        (update ctx :response inc))))))
-        (assoc-in [c-index :enter] identity)
-        (assoc-in [h-index] inc)
-        (assoc-in [c-index :leave] identity)
-        (assoc-in [b-index :leave] identity)
-        (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 39))
-    ; 39 + (:enter x) + handler + (:leave x) => 42
-    => 42))
-
-(deftest drop-interceptor-test
-  (fact ":a drops interceptor :b from chain"
-    ; use default :b, the one that fails an all stages. If :b is not removed
-    ; then this test would fail.
-    (-> test-chain
-        (assoc-in [a-index :enter] (fn [ctx] (update ctx :stack next)))
-        (assoc-in [c-index :enter] identity)
-        (assoc-in [h-index] inc)
-        (assoc-in [c-index :leave] identity)
-        (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 41))
-    => 42))
-
-(deftest terminate-by-truncating-stack-test
-  (fact ":b stops execution by truncating the stack"
-    ; use default :b and :c. If :b or :c is not removed
-    ; then this test would fail.
-    (-> test-chain
-        (assoc-in [a-index :enter] identity)
-        (assoc-in [b-index :enter] (fn [ctx] (s/terminate ctx :terminated-by-b)))
-        (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 41))
-    => :terminated-by-b))
 
 (defn make-logging-interceptor [name]
   {:name name
@@ -192,11 +150,10 @@
 (defn logging-handler [request]
   (conj request [:handler]))
 
-(deftest add-interceptor-with-correct-order-test
-  (fact ":b adds interceptor :x to chain, ensure the order is correct"
+(deftest inject-interceptor-test
+  (fact ":b injects interceptor :x to chain, ensure the order is correct"
     (-> [(make-logging-interceptor :a)
-         {:enter (fn [ctx]
-                   (s/inject ctx (make-logging-interceptor :x)))}
+         {:enter (fn [ctx] (s/inject ctx (make-logging-interceptor :x)))}
          (make-logging-interceptor :c)
          logging-handler]
         (s/into-interceptors)
@@ -208,3 +165,23 @@
         [:leave :c]
         [:leave :x]
         [:leave :a]]))
+
+; TODO: figure out how enqueue should work? Should enqueue add interceptors just
+; before the handler?
+#_
+(deftest enqueue-interceptor-test
+  (fact ":b enqueues interceptor :x to chain, ensure the order is correct"
+    (-> [(make-logging-interceptor :a)
+         {:enter (fn [ctx] (s/enqueue ctx (make-logging-interceptor :x)))}
+         (make-logging-interceptor :c)
+         logging-handler]
+        (s/into-interceptors)
+        (se/execute []))
+    => [[:enter :a]
+        [:enter :c]
+        [:enter :x]
+        [:handler]
+        [:leave :x]
+        [:leave :c]
+        [:leave :a]]))
+
