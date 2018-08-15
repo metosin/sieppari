@@ -36,7 +36,8 @@
     (-interceptor nil) => nil))
 
 (deftest terminate-test
-  (let [queue (into clojure.lang.PersistentQueue/EMPTY (into-interceptors [{:name :a} {:name :b}]))]
+  (let [queue (->> (into-interceptors [{:name :a} {:name :b}])
+                   (into clojure.lang.PersistentQueue/EMPTY))]
     (fact
       (terminate {:queue queue})
       => (just {:queue clojure.lang.PersistentQueue/EMPTY}))
@@ -46,7 +47,8 @@
                 :response :the-response}))))
 
 (deftest inject-test
-  (let [queue (into clojure.lang.PersistentQueue/EMPTY (into-interceptors [{:name :a} {:name :b}]))]
+  (let [queue (->> (into-interceptors [{:name :a} {:name :b}])
+                   (into clojure.lang.PersistentQueue/EMPTY))]
     (fact
       (inject {:queue queue} {:name :x})
       => {:queue [{:name :x}
