@@ -4,7 +4,6 @@
             [sieppari.core :as s]
             [sieppari.chain :as sc]))
 
-
 ;;
 ;; Following tests use a test-chain that has some interceptors
 ;; that fail on each stage function (enter, leave, error). The
