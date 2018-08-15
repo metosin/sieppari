@@ -1,7 +1,7 @@
 (ns example.perf-testing
   (:require [criterium.core :as criterium]
-            [sieppari.core :as s]
-            [sieppari.execute :as se]
+            [sieppari.chain :as sc]
+            [sieppari.queue :as sq]
             [io.pedestal.interceptor :as pi]
             [io.pedestal.interceptor.chain :as pc]))
 
@@ -10,21 +10,21 @@
   (let [interceptor {:error identity}
         interceptors (concat (repeat n interceptor)
                              [identity])
-        p-chain (->> interceptors
-                     (map pi/interceptor)
-                     (doall))
-        s-chain (s/into-interceptors interceptors)]
+        ;p-chain (->> interceptors
+        ;             (map pi/interceptor)
+        ;             (doall))
+        s-chain (sq/into-queue interceptors)]
     (println "\n\nn =" n)
 
-    (println "\n\npedestal:")
-    (criterium/quick-bench
-      (-> {}
-          (pc/enqueue p-chain)
-          (pc/execute)))
+    ;(println "\n\npedestal:")
+    ;(criterium/quick-bench
+    ;  (-> {}
+    ;      (pc/enqueue p-chain)
+    ;      (pc/execute)))
 
     (println "\n\nsieppari execute:")
     (criterium/quick-bench
-      (se/execute s-chain {}))
+      (sc/execute s-chain {}))
     ))
 
 (defn -main [& _]

@@ -1,8 +1,8 @@
-(ns sieppari.execute-test
+(ns sieppari.chain-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as s]
-            [sieppari.execute :as se]))
+            [sieppari.chain :as sc]))
 
 
 ;;
@@ -74,8 +74,7 @@
         (assoc-in [c-index :leave] identity)
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 41))
+        (sc/execute 41))
     => 42))
 
 (deftest enter-b-causes-exception-test
@@ -85,8 +84,7 @@
         (assoc-in [b-index :enter] always-throw)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] identity)
-        (s/into-interceptors)
-        (se/execute 41))
+        (sc/execute 41))
     => (throws-ex-info "oh no")))
 
 (deftest enter-c-causes-exception-a-handles-test
@@ -98,8 +96,7 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] (handle-error :fixed-by-a))
-        (s/into-interceptors)
-        (se/execute 41))
+        (sc/execute 41))
     => :fixed-by-a))
 
 (deftest enter-c-causes-exception-b-handles-test
@@ -111,8 +108,7 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 41))
+        (sc/execute 41))
     => :fixed-by-b))
 
 (deftest handler-causes-exception-b-handles-test
@@ -125,8 +121,7 @@
         (assoc-in [c-index :error] identity)
         (assoc-in [b-index :error] (handle-error :fixed-by-b))
         (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 41))
+        (sc/execute 41))
     => :fixed-by-b))
 
 (deftest enter-b-sets-response-test
@@ -136,8 +131,7 @@
         (assoc-in [b-index :enter] (fn [ctx] (s/terminate ctx :response-by-b)))
         (assoc-in [b-index :leave] identity)
         (assoc-in [a-index :leave] identity)
-        (s/into-interceptors)
-        (se/execute 41))
+        (sc/execute 41))
     => :response-by-b))
 
 (defn make-logging-interceptor [name]
@@ -156,8 +150,7 @@
          {:enter (fn [ctx] (s/inject ctx (make-logging-interceptor :x)))}
          (make-logging-interceptor :c)
          logging-handler]
-        (s/into-interceptors)
-        (se/execute []))
+        (sc/execute []))
     => [[:enter :a]
         [:enter :x]
         [:enter :c]
@@ -176,7 +169,7 @@
          (make-logging-interceptor :c)
          logging-handler]
         (s/into-interceptors)
-        (se/execute []))
+        (sc/execute []))
     => [[:enter :a]
         [:enter :c]
         [:enter :x]

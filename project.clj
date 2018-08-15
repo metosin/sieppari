@@ -5,13 +5,14 @@
                                   [org.clojure/tools.namespace "0.2.11"]
                                   ;; Testing:
                                   [eftest "0.5.2"]
-                                  [metosin/testit "0.4.0-SNAPSHOT"]]
+                                  [metosin/testit "0.4.0-SNAPSHOT"]
+                                  ;; Perf testing:
+                                  [criterium "0.4.4"]
+                                  [io.pedestal/pedestal.interceptor "0.5.4"]
+                                  [org.slf4j/slf4j-nop "1.7.25"]]
                    :source-paths ["dev"]}
              :examples {:source-paths ["examples"]}
-             :perf {:dependencies [[criterium "0.4.4"]
-                                   [io.pedestal/pedestal.interceptor "0.5.4"]
-                                   [org.slf4j/slf4j-nop "1.7.25"]]
-                    :jvm-opts ^:replace ["-server"
+             :perf {:jvm-opts ^:replace ["-server"
                                          "-Xms4096m"
                                          "-Xmx4096m"
                                          "-Dclojure.compiler.direct-linking=true"]}}

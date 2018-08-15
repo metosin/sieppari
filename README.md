@@ -14,7 +14,7 @@ Small, fast, and complete interceptor library.
 Interceptors, like in [Pedestal](http://pedestal.io/reference/interceptors), but
 with minimal implementation and optimal performance.
 
-_Sieppari_ depends on Clojure and nothing else.
+The core _Sieppari_ depends on Clojure and nothing else.
 
 ## First example
 
@@ -59,7 +59,7 @@ executes the chain.
 | Executor      | Execution time lower quantile |
 | ------------- | ----------------------------- |
 | Pedestal      | 62.650689 µs                  |
-| Sieppari      | 14.231854 µs                  |
+| Sieppari      |  8.605188 µs                  |
 
 * MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
 * Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
@@ -79,7 +79,7 @@ In _Pedestal_ the `error` handler resolves the exception by returning
 the `ctx`, and continues the **error** stage by re-throwing the exception.
 
 In _Sieppari_ the `error` handler resolves the exception by returning
-the `ctx` with the `:exception` removed. To continue in the **error** 
+the `ctx` with the `:error` removed. To continue in the **error** 
 stage, just return the `ctx` with the exception still at `:error`. 
 
 In _Pedestal_ the exception are wrapped in other exceptions. 
