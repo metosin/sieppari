@@ -2,9 +2,7 @@
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as s]
-            [sieppari.context :as sc]
-            [sieppari.async.core-async]
-            [sieppari.async.deref]
+            [sieppari.async-test-modules]
             [clojure.core.async :as a]))
 
 (def try-f #'s/try-f)
