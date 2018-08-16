@@ -48,12 +48,13 @@ If you are familiar with interceptors you might want to jump to `Differences to 
 
 ## Async
 
-Add a dependency to one of the Sieppari async libraries (see [./modules/sieppari.async.core-async]
-and [./modules/sieppari.async.deref]) and your done, now you interceptors and handlers can return
-core-async channels or dereffables (like `future` and `promise`) .
+Add a dependency to one of the Sieppari async libraries (see 
+[https://github.com/metosin/sieppari/tree/develop/modules/sieppari.async.core-async] and 
+[https://github.com/metosin/sieppari/tree/develop/modules/sieppari.async.deref]) and your done, now you 
+interceptors and handlers can return core-async channels or dereffables (like `future` and `promise`).
 
-To extend Sieppari async support to other libraries, see [./modules/sieppari.core/src/sieppari/async.clj]
-protocol.
+To extend Sieppari async support to other libraries, see 
+[https://github.com/metosin/sieppari/blob/develop/modules/sieppari.core/src/sieppari/async.clj] protocol.
 
 # Performance
 
