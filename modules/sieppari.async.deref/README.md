@@ -11,10 +11,14 @@ Just add dependency to this library to you project. For example, in Leiningen `p
 [metosin/sieppari.async.deref "0.0.0-SNAPSHOT"]
 ```
 
-Now your handlers and interceptors can return dereffables, like 
-[promise](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/promise) and
-[future](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/future). Anything
-that implements [clojure.lang.IDeref](https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/IDeref.java)
+Now your handlers and interceptors can return dereffables. For example:
+
+```clj
+(defn my-handler [request]
+  (future
+    ; some heavy computation here
+    ))
+```
 
 For more information, see [Sieppari](https://github.com/metosin/sieppari) documentation.
 
