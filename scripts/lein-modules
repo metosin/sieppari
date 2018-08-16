@@ -2,7 +2,10 @@
 
 set -e
 
-# Modules
-for ext in sieppari.async.core-async sieppari.async.deref; do
+for ext in sieppari.core \
+           sieppari.async.core-async \
+           sieppari.async.deref \
+           sieppari;
+do
   ( cd modules/$ext && lein "$@"; )
 done

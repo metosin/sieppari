@@ -1,4 +1,4 @@
-(defproject metosin/sieppari-core "0.0.0-SNAPSHOT"
+(defproject metosin/sieppari.core "0.0.0-SNAPSHOT"
   :description "Small, fast, and complete interceptor library."
   :url "https://github.com/metosin/sieppari"
   :license {:name "Eclipse Public License", :url "http://www.eclipse.org/legal/epl-v10.html"}
