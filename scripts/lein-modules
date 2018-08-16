@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+# Modules
+for ext in sieppari.async.core-async sieppari.async.deref; do
+  ( cd modules/$ext && lein "$@"; )
+done

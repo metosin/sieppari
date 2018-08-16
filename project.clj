@@ -1,7 +1,26 @@
-(defproject metosin/sieppari "0.0.0-SNAPSHOT"
+(defproject metosin/sieppari-parent "0.0.0-SNAPSHOT"
+  :description "Small, fast, and complete interceptor library."
+  :url "https://github.com/metosin/sieppari"
+  :license {:name "Eclipse Public License", :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :deploy-repositories [["releases" :clojars]]
+
   :dependencies []
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
-                                  ;; Optional:
+
+  :managed-dependencies [[metosin/sieppari "0.0.0-SNAPSHOT"]
+                         [metosin/sieppari.core "0.0.0-SNAPSHOT"]
+                         [metosin/sieppari.async.core-async "0.0.0-SNAPSHOT"]
+                         [metosin/sieppari.async.deref "0.0.0-SNAPSHOT"]]
+
+  :profiles {:dev {;; all module sources for development
+                   :source-paths ["modules/sieppari.core/src"
+                                  "modules/sieppari.async.core-async/src"
+                                  "modules/sieppari.async.deref/src"
+                                  "dev"]
+                   :test-paths ["modules/sieppari.core/test"
+                                "modules/sieppari.async.core-async/test"
+                                "modules/sieppari.async.deref/test"]
+                   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
+                                  ;; Add-ons:
                                   [org.clojure/core.async "0.4.474"]
                                   ;; Dev:
                                   [org.clojure/tools.namespace "0.2.11"]
@@ -11,18 +30,15 @@
                                   ;; Perf testing:
                                   [criterium "0.4.4"]
                                   [io.pedestal/pedestal.interceptor "0.5.4"]
-                                  [org.slf4j/slf4j-nop "1.7.25"]]
-                   :source-paths ["dev"]}
+                                  [org.slf4j/slf4j-nop "1.7.25"]]}
              :examples {:source-paths ["examples"]}
-             :perf {:jvm-opts ^:replace ["-server"
-                                         "-Xms4096m"
-                                         "-Xmx4096m"
-                                         "-Dclojure.compiler.direct-linking=true"]}}
+             :perf {:jvm-opts ^:replace ["-server" "-Xms4096m" "-Xmx4096m" "-Dclojure.compiler.direct-linking=true"]}}
+
   :plugins [[lein-eftest "0.5.2"]]
   :eftest {:multithread? false}
   :test-selectors {:default (constantly true)
                    :all (constantly true)}
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+
   :aliases {"perf" ["with-profile" "default,dev,examples,perf"]
             "perf-test" ["perf" "run" "-m" "example.perf-testing"]})
+
