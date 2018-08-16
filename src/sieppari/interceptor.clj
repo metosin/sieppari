@@ -6,6 +6,16 @@
 (defprotocol IntoInterceptor
   (into-interceptor [t] "Given a value, produce an Interceptor Record."))
 
+(defn- exception? [e]
+  (instance? Exception e))
+
+(defn- set-result [ctx response]
+  (if (a/async? response)
+    (a/continue response (partial set-result ctx))
+    (assoc ctx
+      (if (exception? response) :error :response)
+      response)))
+
 (extend-protocol IntoInterceptor
   ; Map -> Interceptor:
   clojure.lang.IPersistentMap
@@ -16,10 +26,7 @@
   clojure.lang.Fn
   (into-interceptor [handler]
     (into-interceptor {:enter (fn [ctx]
-                                (let [response (handler (:request ctx))]
-                                  (if (a/async? response)
-                                    (a/continue response (partial assoc ctx :response))
-                                    (assoc ctx :response response))))}))
+                                (set-result ctx (handler (:request ctx))))}))
 
   ; Vector -> Interceptor, first element is a function to create
   ; the interceptor, rest are arguments for it:

@@ -3,7 +3,7 @@
             [sieppari.queue :as q])
   (:import (java.util Iterator)))
 
-(defrecord Context [request response error queue stack])
+(defrecord Context [request response error queue stack on-complete on-error])
 
 (defn- try-f [ctx f]
   (if f
@@ -13,14 +13,18 @@
         (assoc ctx :error e)))
     ctx))
 
-(defn- leave [^Iterator it ctx]
+(defn- leave [ctx]
   (if (a/async? ctx)
-    (a/continue ctx (partial leave it))
-    (if (.hasNext it)
-      (let [stage (if (:error ctx) :error :leave)
-            f (-> it .next stage)]
-        (recur it (try-f ctx f)))
-      ctx)))
+    (a/continue ctx leave)
+    (let [^Iterator it (:stack ctx)]
+      (if (.hasNext it)
+        (let [stage (if (:error ctx) :error :leave)
+              f (-> it .next stage)]
+          (recur (try-f ctx f)))
+        ctx))))
+
+(defn- iter ^Iterator [v]
+  (clojure.lang.RT/iter v))
 
 (defn- enter [ctx]
   (if (a/async? ctx)
@@ -28,15 +32,9 @@
     (let [queue ^clojure.lang.PersistentQueue (:queue ctx)
           stack (:stack ctx)
           interceptor (peek queue)]
-      (cond
-
-        (not interceptor)
-        (leave (clojure.lang.RT/iter stack) ctx)
-
-        (:error ctx)
-        (leave (clojure.lang.RT/iter stack) ctx)
-
-        :else
+      (if (or (not interceptor)
+              (:error ctx))
+        (update ctx :stack iter)
         (recur (-> ctx
                    (assoc :queue (pop queue))
                    (assoc :stack (conj stack interceptor))
@@ -47,26 +45,36 @@
     (throw e))
   ctx)
 
-(defn- deliver-result [ctx on-complete]
+(defn- wait-result [ctx]
   (if (a/async? ctx)
-    (a/continue ctx (fn [ctx] (deliver-result ctx on-complete)))
-    (on-complete ctx)))
+    (recur (a/await ctx))
+    ctx))
+
+(defn- deliver-result [ctx]
+  (if (a/async? ctx)
+    (a/continue ctx deliver-result)
+    (let [error (:error ctx)
+          result (or error (:response ctx))
+          callback (if error :on-error :on-complete)
+          f (callback ctx identity)]
+      (f result))))
 
 ;;
 ;; Public API:
 ;;
 
+
 (defn execute
-  ([interceptors request on-complete]
-   (-> (new Context request nil nil (q/into-queue interceptors) nil)
+  ([interceptors request on-complete on-error]
+   (-> (new Context request nil nil (q/into-queue interceptors) nil on-complete on-error)
        (enter)
-       (deliver-result (comp on-complete :response)))
+       (leave)
+       (deliver-result))
    nil)
   ([interceptors request]
-   (let [p (promise)]
-     (-> (new Context request nil nil (q/into-queue interceptors) nil)
-         (enter)
-         (deliver-result (partial deliver p)))
-     (-> (deref p)
-         (throw-if-error!)
-         :response))))
+   (-> (new Context request nil nil (q/into-queue interceptors) nil nil nil)
+       (enter)
+       (leave)
+       (wait-result)
+       (throw-if-error!)
+       :response)))
