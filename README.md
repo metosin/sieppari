@@ -46,6 +46,15 @@ If you are new to interceptors, check the
 [Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
 If you are familiar with interceptors you might want to jump to `Differences to Pedestal` below.
 
+## Async
+
+Add a dependency to one of the Sieppari async libraries (see [./modules/sieppari.async.core-async]
+and [./modules/sieppari.async.deref]) and your done, now you interceptors and handlers can return
+core-async channels or dereffables (like `future` and `promise`) .
+
+To extend Sieppari async support to other libraries, see [./modules/sieppari.core/src/sieppari/async.clj]
+protocol.
+
 # Performance
 
 _Sieppari_ aims for minimal functionality and can therefore be
@@ -54,12 +63,15 @@ quite fast. Complete example to test performance is
 
 The example creates a chain of 100 interceptors that have 
 `clojure.core/identity` as `:enter` and `:leave` functions and then
-executes the chain.
+executes the chain. The async tests also have 100 interceptors, but
+in async case they all return `core.async` channels on enter and leave. 
 
-| Executor      | Execution time lower quantile |
-| ------------- | ----------------------------- |
-| Pedestal      | 62.650689 µs                  |
-| Sieppari      |  8.605188 µs                  |
+| Executor          | Execution time lower quantile |
+| ----------------- | ----------------------------- |
+| Pedestal sync     |  64 µs                        |
+| Sieppari sync     |   9 µs                        |
+| Pedestal async    | 410 µs                        |
+| Sieppari async    | 396 µs                        |
 
 * MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
 * Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
@@ -94,8 +106,8 @@ like out of memory or class loader failures are not captured by _Sieppari_.
 
 _Pedestal_ has built in support for `core.async`.
 
-_Sieppari_ does not support any async at the moment. Extendable async support
-is coming to _Sieppari_ in near future.
+_Sieppari_ has extendable async support. Support for `core.async` and clojure
+dereffables (like `future` and `promise`) is provided in add-on modules.
 
 # Thanks
 
