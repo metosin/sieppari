@@ -60,7 +60,7 @@
   ([interceptors request on-complete]
    (-> (new Context request nil nil (q/into-queue interceptors) nil)
        (enter)
-       (deliver-result (comp on-complete :result)))
+       (deliver-result (comp on-complete :response)))
    nil)
   ([interceptors request]
    (let [p (promise)]
