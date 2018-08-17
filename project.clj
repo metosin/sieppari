@@ -15,12 +15,10 @@
                    :source-paths ["modules/sieppari.core/src"
                                   "modules/sieppari.async.core-async/src"
                                   "modules/sieppari.async.deref/src"
-                                  "modules/sieppari.pedestal-migration/src"
                                   "dev"]
                    :test-paths ["modules/sieppari.core/test"
                                 "modules/sieppari.async.core-async/test"
-                                "modules/sieppari.async.deref/test"
-                                "modules/sieppari.pedestal-migration/test"]
+                                "modules/sieppari.async.deref/test"]
                    :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
                                   ;; Add-ons:
                                   [org.clojure/core.async "0.4.474"]
