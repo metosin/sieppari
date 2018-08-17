@@ -121,4 +121,5 @@ dereffables (like `future` and `promise`) is provided in add-on modules.
 
 Copyright &copy; 2018 [Metosin Oy](https://www.metosin.fi/)
 
-Distributed under the Eclipse Public License, the same as Clojure.
+Distributed under the Eclipse Public License 2.0.
+
