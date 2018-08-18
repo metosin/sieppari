@@ -1,13 +1,12 @@
 # sieppari
 
-Small, fast, and complete interceptor library.
+Small, fast, and complete interceptor library with built-in support
+for common async libraries.
 
 > Noun
 > **Siepata (Intercept)**
 > 
 >   sieppari, _someone or something that intercepts_
-
-**This library is still very much under development**
 
 ## What it does
 
@@ -15,6 +14,10 @@ Interceptors, like in [Pedestal](http://pedestal.io/reference/interceptors), but
 with minimal implementation and optimal performance.
 
 The core _Sieppari_ depends on Clojure and nothing else.
+
+If you are new to interceptors, check the
+[Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
+If you are familiar with interceptors you might want to jump to `Differences to Pedestal` below.
 
 ## First example
 
@@ -42,20 +45,18 @@ The core _Sieppari_ depends on Clojure and nothing else.
 ;=> {:y 42}
 ```
 
-If you are new to interceptors, check the
-[Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
-If you are familiar with interceptors you might want to jump to `Differences to Pedestal` below.
-
 ## Async
 
-Add a dependency to one of the Sieppari async libraries (see 
-[sieppari.async.core-async](https://github.com/metosin/sieppari/tree/develop/modules/sieppari.async.core-async) and 
-[sieppari.async.deref](https://github.com/metosin/sieppari/tree/develop/modules/sieppari.async.deref)) and your done, 
-now you interceptors and handlers can return core-async channels or dereffables (like `future` and `promise`).
+By default Sieppari has a support for clojure deferrables.
 
-To extend Sieppari async support to other libraries, see 
-[sieppari.async/AsyncContext](https://github.com/metosin/sieppari/blob/develop/modules/sieppari.core/src/sieppari/async.clj)
-protocol.
+To add a support for one of the supported external async libraries, just add a dependency to them
+and you are ready. Currently supported async libraries are:
+
+* [core.async](https://github.com/clojure/core.async)
+* [Manifold](https://github.com/ztellman/manifold)
+
+To extend Sieppari async support to other libraries, extend a simple protocol 
+[sieppari.async/AsyncContext](https://github.com/metosin/sieppari/blob/develop/modules/sieppari.core/src/sieppari/async.clj).
 
 # Performance
 
@@ -106,10 +107,8 @@ like out of memory or class loader failures are not captured by _Sieppari_.
 
 ## Async
 
-_Pedestal_ has built in support for `core.async`.
-
-_Sieppari_ has extendable async support. Support for `core.async` and clojure
-dereffables (like `future` and `promise`) is provided in add-on modules.
+_Pedestal_ transfers thread local bindings from call-site into async interceptors.
+_Sieppari_ does not support this.
 
 # Thanks
 
