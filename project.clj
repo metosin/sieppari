@@ -3,6 +3,7 @@
   :url "https://github.com/metosin/sieppari"
   :license {:name "Eclipse Public License", :url "https://www.eclipse.org/legal/epl-2.0/"}
   :deploy-repositories [["releases" :clojars]]
+  :lein-release {:deploy-via :clojars}
 
   :dependencies []
 
