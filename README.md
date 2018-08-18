@@ -1,102 +1,124 @@
 # sieppari
 
-Small [http://pedestal.io/reference/interceptors](interceptor) library with built-in 
-dependency sorting and applicability filtering.
+Small, fast, and complete interceptor library with built-in support
+for common async libraries.
 
 > Noun
 > **Siepata (Intercept)**
 > 
 >   sieppari, _someone or something that intercepts_
 
-**This library is still very much under development**
-
 ## What it does
 
-Interceptors, like in [http://pedestal.io/](Pedestal), but
-with automatic dependency sorting and applicability filtering.
+Interceptors, like in [Pedestal](http://pedestal.io/reference/interceptors), but
+with minimal implementation and optimal performance.
+
+The core _Sieppari_ depends on Clojure and nothing else.
 
 If you are new to interceptors, check the
-[http://pedestal.io/reference/interceptors](Pedestal Interceptors documentation)
-first.
+[Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
+If you are familiar with interceptors you might want to jump to `Differences to Pedestal` below.
 
-## Dependency sorting
+## First example
 
-Building an execution pipeline (typically a HTTP request processing)
-with interceptors allows programmers to split functionality into
-simple, single purpose, easily testable interceptors. Processing 
-pipeline is created by stacking multiple interceptors into a stack.
+```clj
+(ns example.simple
+  (:require [sieppari.core :as s]
+            [sieppari.execute :as se]))
 
-Interceptors depend on other interceptors to do their work. For
-example, a session interceptor that attaches current user information
-to request could depend on other interceptors to parse cookies and
-to provide database connection.
+;; Simple interceptor, in enter update value in `[:request :x]` with `inc`:
 
-Maintaining the proper order of interceptors can easily become very
-difficult task.
+(def inc-x-interceptor
+  {:enter (fn [ctx]
+            (update-in ctx [:request :x] inc))})
 
-This library allows interceptors to declare dependant interceptors
-and it automatically orders interceptors to an order where
-interceptors are stacked in correct order.
+;; Simple handler, take `:x` from request, apply `inc`, and
+;; return an map with `:y`.
 
-## Applicability filtering
+(defn handler [request]
+  {:y (inc (:x request))})
 
-The execution of interceptors can consume computing resources. If
-the interceptor is not required, it should bot be on the stack
-at all. 
+(def interceptor-chain (s/into-interceptors [inc-x-interceptor
+                                             handler]))
 
-This library allows interceptors to declare a predicate to
-determine if the handler requires the interceptor.
+(se/execute interceptor-chain {:x 40})
+;=> {:y 42}
+```
 
-For example, if the handler does not need current users information
-the session interceptor can be omitted from the interceptor stack.
- 
-## Other differences to Pedestal
+## Async
 
-### Manipulation of the interceptor chain
+By default Sieppari has a support for clojure deferrables.
 
-Pedestal allows interceptors to manipulate the interceptor stack.
-This library does not allow that.
+To add a support for one of the supported external async libraries, just add a dependency to them
+and you are ready. Currently supported async libraries are:
 
-### Terminating the **enter** stage
+* [core.async](https://github.com/clojure/core.async)
+* [Manifold](https://github.com/ztellman/manifold)
 
-In _Pedestal_, to terminate the execution of an interceptor chain in 
-**enter** stage you call the [terminate](http://pedestal.io/api/pedestal.interceptor/io.pedestal.interceptor.chain.html#var-terminate)
-function. This clears the execution stack and begins the **leave**
-stage.
+To extend Sieppari async support to other libraries, extend a simple protocol 
+[sieppari.async/AsyncContext](https://github.com/metosin/sieppari/blob/develop/modules/sieppari.core/src/sieppari/async.clj).
 
-In _Sieppari_, if the `enter` function returns a `ctx` with 
-non-nil value under `:response` key, the **enter** stage is 
-terminated and the **leave** stage begins.
+# Performance
 
-### The **error** handler
+_Sieppari_ aims for minimal functionality and can therefore be
+quite fast. Complete example to test performance is 
+[included](https://github.com/metosin/sieppari/blob/develop/examples/example/perf_testing.clj).
+
+The example creates a chain of 100 interceptors that have 
+`clojure.core/identity` as `:enter` and `:leave` functions and then
+executes the chain. The async tests also have 100 interceptors, but
+in async case they all return `core.async` channels on enter and leave. 
+
+| Executor          | Execution time lower quantile |
+| ----------------- | ----------------------------- |
+| Pedestal sync     |  64 µs                        |
+| Sieppari sync     |   9 µs                        |
+| Pedestal async    | 410 µs                        |
+| Sieppari async    | 396 µs                        |
+
+* MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
+* Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
+* Clojure 1.9.0
+
+# Differences to Pedestal
+
+## The **error** handler
 
 In _Pedestal_ the `error` handler takes two arguments, the `ctx` and
 the exception.
 
 In _Sieppari_ the `error` handlers takes just one argument, the `ctx`,
-and the exception is in `ctx` under the key `:exception`.
+and the exception is in the `ctx` under the key `:error`.
 
 In _Pedestal_ the `error` handler resolves the exception by returning
 the `ctx`, and continues the **error** stage by re-throwing the exception.
 
 In _Sieppari_ the `error` handler resolves the exception by returning
-the `ctx` with the `:exception` removed. To continue in the **error** 
-stage, just return the `ctx` with the exception still at `:exception`. 
+the `ctx` with the `:error` removed. To continue in the **error** 
+stage, just return the `ctx` with the exception still at `:error`. 
 
 In _Pedestal_ the exception are wrapped in other exceptions. 
 
 In _Sieppari_ exceptions are not wrapped.
 
-## Usage
+_Pedestal_ interception execution catches `java.lang.Throwable` for error 
+processing. _Sieppari_ catches `java.lang.Exception`. This means that things 
+like out of memory or class loader failures are not captured by _Sieppari_.
 
-FIXME
+## Async
 
-## Thanks
+_Pedestal_ transfers thread local bindings from call-site into async interceptors.
+_Sieppari_ does not support this.
 
-Idea stolen from [Pedestal Interceptors](https://github.com/pedestal/pedestal/tree/master/interceptor).
+# Thanks
+
+* Original idea from [Pedestal Interceptors](https://github.com/pedestal/pedestal/tree/master/interceptor).
+* Motivation @ikitommi
+* Topology sorting @nilern 
 
 ## License
 
 Copyright &copy; 2018 [Metosin Oy](https://www.metosin.fi/)
 
-Distributed under the Eclipse Public License, the same as Clojure.
+Distributed under the Eclipse Public License 2.0.
+

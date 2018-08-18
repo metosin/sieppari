@@ -1,115 +1,81 @@
 (ns sieppari.core
-  (:require [clojure.string :as str]))
+  (:require [sieppari.queue :as q]
+            [sieppari.async :as a]
+            [sieppari.async.ext-lib-support])
+  (:import (java.util Iterator)))
 
-(defrecord Interceptor [name
-                        enter
-                        leave
-                        error
-                        applies?
-                        depends])
+(defrecord Context [request response error queue stack on-complete on-error])
 
-(defn interceptor? [value]
-  (instance? Interceptor value))
+(defn- try-f [ctx f]
+  (if f
+    (try
+      (f ctx)
+      (catch Exception e
+        (assoc ctx :error e)))
+    ctx))
 
-(def interceptor-defaults {:enter identity
-                           :leave identity
-                           :error identity
-                           :applies-to? (constantly true)
-                           :depends #{}})
+(defn- leave [ctx]
+  (if (a/async? ctx)
+    (a/continue ctx leave)
+    (let [^Iterator it (:stack ctx)]
+      (if (.hasNext it)
+        (let [stage (if (:error ctx) :error :leave)
+              f (-> it .next stage)]
+          (recur (try-f ctx f)))
+        ctx))))
 
-(defn validate-interceptor [interceptor]
-  (when-not (-> interceptor (contains? :name))
-    (throw (ex-info "interceptor :name is mandatory" {:interceptor interceptor})))
-  (when-not (-> interceptor :name keyword?)
-    (throw (ex-info "interceptor :name must be a keyword" {:interceptor interceptor})))
-  (when-let [non-fns (->> (map (juxt identity interceptor)
-                               [:enter :leave :error :applies-to?])
-                          (remove (comp fn? second))
-                          (map first)
-                          (seq))]
-    (println (pr-str non-fns))
-    (throw (ex-info (format "interceptor %s must be a function"
-                            (str/join non-fns ","))
-                    {:interceptor interceptor})))
-  interceptor)
+(defn- iter ^Iterator [v]
+  (clojure.lang.RT/iter v))
 
-(defprotocol IntoInterceptor
-  (-interceptor [t] "Given a value, produce an Interceptor Record."))
+(defn- enter [ctx]
+  (if (a/async? ctx)
+    (a/continue ctx enter)
+    (let [queue ^clojure.lang.PersistentQueue (:queue ctx)
+          stack (:stack ctx)
+          interceptor (peek queue)]
+      (if (or (not interceptor)
+              (:error ctx))
+        (update ctx :stack iter)
+        (recur (-> ctx
+                   (assoc :queue (pop queue))
+                   (assoc :stack (conj stack interceptor))
+                   (try-f (:enter interceptor))))))))
 
-(extend-protocol IntoInterceptor
-  clojure.lang.IPersistentMap
-  (-interceptor [t]
-    (-> (merge interceptor-defaults t)
-        (validate-interceptor)
-        (map->Interceptor)))
+(defn- throw-if-error! [ctx]
+  (when-let [e (:error ctx)]
+    (throw e))
+  ctx)
 
-  clojure.lang.Fn
-  (-interceptor [t]
-    (-interceptor {:name :handler
-                   :enter (fn [ctx]
-                            (assoc ctx :response (-> ctx :request t)))}))
+(defn- wait-result [ctx]
+  (if (a/async? ctx)
+    (recur (a/await ctx))
+    ctx))
 
-  Interceptor
-  (-interceptor [t]
-    t)
-
-  nil
-  (-interceptor [t]
-    nil))
-
-(defn- index-by-name [interceptors]
-  (reduce (fn [acc {:as interceptor :keys [name]}]
-            (when (contains? acc name)
-              (throw (ex-info (str "multiple interceptors with name: " name) {})))
-            (assoc acc name interceptor))
-          {}
-          interceptors))
-
-(defn- post-order
-  "Put `interceptors` in post-order.
-  Can also be described as a reverse topological sort."
-  [interceptors]
-  (let [interceptors-by-name (index-by-name interceptors)]
-    (letfn [(toposort [{:keys [name depends] :as interceptor} path colors]
-              (case (name colors)
-                :white (let [[interceptors* colors]
-                             (toposort-seq (map interceptors-by-name depends)
-                                           (conj path name)
-                                           (assoc colors name :grey))]
-                         [(conj interceptors* interceptor)
-                          (assoc colors name :black)])
-                :grey (throw (ex-info "interceptors have circular dependency"
-                                      {:circular-dependency
-                                       (drop-while #(not= % name)
-                                                   (conj path name))}))
-                :black [() colors]))
-
-            (toposort-seq [interceptors path colors]
-              (reduce (fn [[interceptors* colors] interceptor]
-                        (let [[interceptors** colors] (toposort interceptor path colors)]
-                          [(into interceptors* interceptors**) colors]))
-                      [[] colors] interceptors))]
-
-      (let [initial-colors (zipmap (map :name interceptors) (repeat :white))]
-        (first (toposort-seq interceptors [] initial-colors))))))
-
-(defn- append [interceptor interceptors]
-  (concat interceptors [interceptor]))
+(defn- deliver-result [ctx]
+  (if (a/async? ctx)
+    (a/continue ctx deliver-result)
+    (let [error (:error ctx)
+          result (or error (:response ctx))
+          callback (if error :on-error :on-complete)
+          f (callback ctx identity)]
+      (f result))))
 
 ;;
 ;; Public API:
 ;;
 
-(defn into-interceptors
-  ([interceptors handler target]
-   (->> interceptors
-        (remove nil?)
-        (map (partial merge interceptor-defaults))
-        (filter #(-> % :applies-to? (apply [target])))
-        (post-order)
-        (append handler)
-        (map -interceptor)))
-  ([interceptors handler]
-   (into-interceptors interceptors handler handler))
-  ([interceptors]
-   (into-interceptors (butlast interceptors) (last interceptors))))
+
+(defn execute
+  ([interceptors request on-complete on-error]
+   (-> (new Context request nil nil (q/into-queue interceptors) nil on-complete on-error)
+       (enter)
+       (leave)
+       (deliver-result))
+   nil)
+  ([interceptors request]
+   (-> (new Context request nil nil (q/into-queue interceptors) nil nil nil)
+       (enter)
+       (leave)
+       (wait-result)
+       (throw-if-error!)
+       :response)))

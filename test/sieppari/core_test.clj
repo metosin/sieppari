@@ -1,70 +1,96 @@
 (ns sieppari.core-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
-            [sieppari.core :as c]))
+            [sieppari.core :as s]
+            [clojure.core.async :as a]
+            [manifold.deferred :as md]))
 
-(deftest interceptor?-test
+(let [d (md/deferred)]
+  (println (type d))
+  (md/on-realized d
+    (fn [x] (println "success!" x))
+    (fn [x] (println "error!" x)))
+  (future
+    (Thread/sleep 500)
+    (md/success! d "Jiihaa")))
+
+(def try-f #'s/try-f)
+
+(deftest try-f-test
   (fact
-    (c/interceptor? "foo")
-    => false)
+    (try-f {} nil)
+    => (just {}))
   (fact
-    (c/interceptor? (c/-interceptor {:name :foo, :handler identity}))
-    => true))
+    (try-f {} (fn [ctx] (assoc ctx :foo "bar")))
+    => {:foo "bar"})
+  (fact
+    (try-f {} (fn [_] (throw (ex-info "oh no" {}))))
+    => {:error (throws-ex-info "oh no" {})}))
 
-(deftest -interceptor-test
-  (fact ":name is mandatory"
-    (c/-interceptor {})
-    => (throws-ex-info "interceptor :name is mandatory"))
+(def throw-if-error! #'s/throw-if-error!)
 
-  (fact ":name must be a keyword"
-    (c/-interceptor {:name "foo"})
-    => (throws-ex-info "interceptor :name must be a keyword"))
+(deftest throw-if-error!-test
+  (fact
+    (throw-if-error! {:response :foo})
+    => {:response :foo})
+  (fact
+    (throw-if-error! {:error (ex-info "oh no" {})})
+    => (throws-ex-info "oh no" {})))
 
-  (fact "defaults are applied"
-    (c/-interceptor {:name :foo
-                     :handler str})
-    => {:name :foo
-        :handler str
-        :leave identity
-        :error identity
-        :applies-to? (fn [f] (true? (f :what-ever)))
-        :depends (just #{})})
+(def wait-result #'s/wait-result)
 
+(deftest wait-result-core-async-test
+  (fact
+    (wait-result :ctx) => :ctx)
+  (fact
+    (wait-result (a/go :ctx)) => (just :ctx))
+  (fact
+    (wait-result (a/go (a/go :ctx))) => (just :ctx)))
 
-  (fact "functions can be made to interceptors"
-    (c/-interceptor identity)
-    => {:name :handler
-        :enter identity})
+(deftest wait-result-deref-test
+  (fact
+    (wait-result :ctx) => :ctx)
+  (fact
+    (wait-result (future :ctx)) => (just :ctx))
+  (fact
+    (wait-result (future (future :ctx))) => (just :ctx)))
 
-  (let [i (c/-interceptor identity)]
-    (fact "interceptors are already interceptors"
-      (c/-interceptor i) => i))
+(def deliver-result #'s/deliver-result)
 
-  (fact "nil punning"
-    (c/-interceptor nil)
-    => nil))
+(defn fail! [_] (throw (ex-info "should never get here" {})))
 
-(def post-order #'c/post-order)
+(deftest deliver-result-test
+  (let [p (promise)]
+    (deliver-result {:response :r
+                     :on-complete (partial deliver p)
+                     :on-error fail!})
+    (fact {:timeout 10}
+      @p => :r))
 
-(deftest post-order-test
-  (fact "Topology sort works"
-    (post-order [{:name :e, :handler identity, :depends #{:b :d}}
-                 {:name :d, :handler identity, :depends #{:c}}
-                 {:name :a, :handler identity, :depends #{}}
-                 {:name :c, :handler identity, :depends #{:a :b}}
-                 {:name :b, :handler identity, :depends #{:a}}])
-    => [{:name :a}
-        {:name :b}
-        {:name :c}
-        {:name :d}
-        {:name :e}])
-  (fact "Circular dependencies are reported"
-    (post-order [{:name :a, :handler identity, :depends #{:b}}
-                 {:name :b, :handler identity, :depends #{:c}}
-                 {:name :c, :handler identity, :depends #{:d}}
-                 {:name :d, :handler identity, :depends #{:a}}])
-    => (throws-ex-info "interceptors have circular dependency")))
+  (let [p (promise)]
+    (deliver-result {:error (ex-info "oh no" {})
+                     :on-complete fail!
+                     :on-error (partial deliver p)})
+    (fact {:timeout 10}
+      @p => (throws-ex-info "oh no" {})))
 
-(deftest into-interceptors-test
-  ; TODO:
-  )
+  (let [p (promise)]
+    (deliver-result (a/go {:response :r
+                           :on-complete (partial deliver p)
+                           :on-error fail!}))
+    (fact {:timeout 10}
+      @p => :r))
+
+  (let [p (promise)]
+    (deliver-result (a/go {:error (ex-info "oh no" {})
+                           :on-complete fail!
+                           :on-error (partial deliver p)}))
+    (fact {:timeout 10}
+      @p => (throws-ex-info "oh no" {})))
+
+  (let [p (promise)]
+    (deliver-result (future (a/go {:response :r
+                                   :on-complete (partial deliver p)
+                                   :on-error fail!})))
+    (fact {:timeout 10}
+      @p => :r)))
