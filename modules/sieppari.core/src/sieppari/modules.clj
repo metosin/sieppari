@@ -1,20 +1,37 @@
-(ns sieppari.modules)
+(ns sieppari.modules
+  (:require [sieppari.async :as sa]
+            [sieppari.async :as sa]))
 
 ;;
-;; Add-on modules. Try to require add-on modules. Loads the add-on module
-;; if it is in classpath.
-;;
-;; This means that you can enable add-on my just including the add-on module
-;; to project dependency.
+;; Support for Clojure deferrables, like `promise` and `future`:
 ;;
 
-(def modules '[sieppari.async.core-async
-               sieppari.async.deref])
+(extend-protocol sa/AsyncContext
+  clojure.lang.IDeref
+  (async? [_] true)
+  (continue [c f] (let [p (promise)]
+                    (future
+                      (deliver p (f @c)))
+                    p))
+  (await [c] @c))
 
-(defn try-require [module-ns]
-  (try
-    (require module-ns)
-    (catch Exception _)))
+; Util, try to require an external library namespace, and if successfull, add
+; support for it at runtime.
 
-(doseq [ns modules]
-  (try-require ns))
+(defmacro when-ns [ns & body]
+  `(try
+     (do (require (quote ~ns))
+         ~@body)
+     (catch Exception ~'_)))
+
+;;
+;; Support for core.async:
+;;
+
+
+(when-ns [clojure.core.async :refer [go <! <!!]]
+  (extend-protocol sa/AsyncContext
+    clojure.core.async.impl.protocols.Channel
+    (async? [_] true)
+    (continue [c f] (go (f (<! c))))
+    (await [c] (<!! c))))
