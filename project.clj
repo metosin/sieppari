@@ -6,19 +6,7 @@
 
   :dependencies []
 
-  :managed-dependencies [[metosin/sieppari "0.0.0-SNAPSHOT"]
-                         [metosin/sieppari.core "0.0.0-SNAPSHOT"]
-                         [metosin/sieppari.async.core-async "0.0.0-SNAPSHOT"]
-                         [metosin/sieppari.async.deref "0.0.0-SNAPSHOT"]]
-
-  :profiles {:dev {;; all module sources for development
-                   :source-paths ["modules/sieppari.core/src"
-                                  "modules/sieppari.async.core-async/src"
-                                  "modules/sieppari.async.deref/src"
-                                  "dev"]
-                   :test-paths ["modules/sieppari.core/test"
-                                "modules/sieppari.async.core-async/test"
-                                "modules/sieppari.async.deref/test"]
+  :profiles {:dev {:source-paths ["dev"]
                    :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
                                   ;; Add-ons:
                                   [org.clojure/core.async "0.4.474"]
@@ -41,4 +29,3 @@
 
   :aliases {"perf" ["with-profile" "default,dev,examples,perf"]
             "perf-test" ["perf" "run" "-m" "example.perf-testing"]})
-
