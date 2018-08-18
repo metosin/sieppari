@@ -10,4 +10,12 @@
   Object
   (async? [_] false)
   (continue [t f] (f t))
-  (await [t] t))
+  (await [t] t)
+
+  clojure.lang.IDeref
+  (async? [_] true)
+  (continue [c f] (let [p (promise)]
+                    (future
+                      (deliver p (f @c)))
+                    p))
+  (await [c] @c))
