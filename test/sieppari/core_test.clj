@@ -2,7 +2,17 @@
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as s]
-            [clojure.core.async :as a]))
+            [clojure.core.async :as a]
+            [manifold.deferred :as md]))
+
+(let [d (md/deferred)]
+  (println (type d))
+  (md/on-realized d
+    (fn [x] (println "success!" x))
+    (fn [x] (println "error!" x)))
+  (future
+    (Thread/sleep 500)
+    (md/success! d "Jiihaa")))
 
 (def try-f #'s/try-f)
 

@@ -10,6 +10,7 @@
                    :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
                                   ;; Add-ons:
                                   [org.clojure/core.async "0.4.474"]
+                                  [manifold "0.1.8"]
                                   ;; Dev:
                                   [org.clojure/tools.namespace "0.2.11"]
                                   ;; Testing:

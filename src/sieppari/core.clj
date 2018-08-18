@@ -1,7 +1,7 @@
 (ns sieppari.core
   (:require [sieppari.queue :as q]
             [sieppari.async :as a]
-            [sieppari.async-support])
+            [sieppari.async.ext-lib-support])
   (:import (java.util Iterator)))
 
 (defrecord Context [request response error queue stack on-complete on-error])
