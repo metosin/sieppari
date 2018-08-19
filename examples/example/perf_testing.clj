@@ -44,6 +44,7 @@
 
         p-context {:request {}}
         p-sync-chain (mapv pi/interceptor sync-interceptors)
+        p-async-chain (map pi/interceptor (concat (repeat 10 async-interceptor) [identity]))
 
         s-sync-chain (sq/into-queue sync-interceptors)
         s-async-chain (sq/into-queue async-interceptors)
@@ -66,29 +67,28 @@
            (pc/execute)
            :response))
 
-    ;; 100µs
-    (let [interceptors (map pi/interceptor (concat (repeat 10 async-interceptor) [identity]))]
-      (bench!
-        "pedestal: core.async"
-        (let [p (promise)]
-          (->> (cons (make-capture-result-interceptor p) interceptors)
-               (pc/enqueue p-context)
-               (pc/execute))
-          @p)))
+    ;; 99µs
+    (bench!
+      "pedestal: core.async"
+      (let [p (promise)]
+        (->> (cons (make-capture-result-interceptor p) p-async-chain)
+             (pc/enqueue p-context)
+             (pc/execute))
+        @p))
 
     ;; 1.3µs
     (bench!
       "sieppari: sync (sync)"
       (s/execute s-sync-chain {}))
 
-    ;; 1.4µs
+    ;; 1.3µs
     (bench!
       "sieppari: sync (async)"
       (let [p (promise)]
         (s/execute s-sync-chain {} (partial deliver p) identity)
         @p))
 
-    ;; 63µs
+    ;; 61µs
     (bench!
       "sieppari: core.async (sync)"
       (s/execute s-async-chain {}))
