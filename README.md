@@ -90,6 +90,23 @@ and you are ready. Currently supported async libraries are:
 
 To extend Sieppari async support to other libraries, just extend `AsyncContext` protocol.
 
+### core.async example
+
+Requires dependency to `[org.clojure/core.async "0.4.474"]` or higher.
+
+```clj
+(require '[clojure.core.async :as a])
+
+(defn multiply-x-interceptor [n]
+  {:enter (fn [ctx]
+            (a/go (update-in ctx [:request :x] * n)))})
+
+(sieppari/execute
+  [inc-x-interceptor (multiply-x-interceptor 10) handler]
+  {:x 40})
+;=> {:y 411}
+```
+
 # Performance
 
 _Sieppari_ aims for minimal functionality and can therefore be
