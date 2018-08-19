@@ -27,17 +27,7 @@
     (try-f {} (fn [_] (throw (ex-info "oh no" {}))))
     => {:error (throws-ex-info "oh no" {})}))
 
-(def throw-if-error! #'s/throw-if-error!)
-
-(deftest throw-if-error!-test
-  (fact
-    (throw-if-error! {:response :foo})
-    => {:response :foo})
-  (fact
-    (throw-if-error! {:error (ex-info "oh no" {})})
-    => (throws-ex-info "oh no" {})))
-
-(def wait-result #'s/wait-result)
+(def wait-result #'s/await-result)
 
 (deftest wait-result-core-async-test
   (fact
