@@ -24,32 +24,28 @@
           (recur (try-f ctx f)))
         ctx))))
 
-(defn- iter ^Iterator [v]
+(defn- iter [v]
   (clojure.lang.RT/iter v))
 
 (defn- enter [ctx]
   (if (a/async? ctx)
     (a/continue ctx enter)
-    (let [queue ^clojure.lang.PersistentQueue (:queue ctx)
+    (let [queue (:queue ctx)
           stack (:stack ctx)
           interceptor (peek queue)]
-      (if (or (not interceptor)
-              (:error ctx))
-        (update ctx :stack iter)
+      (if (or (not interceptor) (:error ctx))
+        (assoc ctx :stack (iter stack))
         (recur (-> ctx
                    (assoc :queue (pop queue))
                    (assoc :stack (conj stack interceptor))
                    (try-f (:enter interceptor))))))))
 
-(defn- throw-if-error! [ctx]
-  (when-let [e (:error ctx)]
-    (throw e))
-  ctx)
-
-(defn- wait-result [ctx]
+(defn- await-result [ctx]
   (if (a/async? ctx)
     (recur (a/await ctx))
-    ctx))
+    (if-let [error (:error ctx)]
+      (throw error)
+      (:response ctx))))
 
 (defn- deliver-result [ctx]
   (if (a/async? ctx)
@@ -60,22 +56,25 @@
           f (callback ctx identity)]
       (f result))))
 
+(defn- context
+  ([request interceptors]
+   (new Context request nil nil (q/into-queue interceptors) nil nil nil))
+  ([request interceptors on-complete on-error]
+   (new Context request nil nil (q/into-queue interceptors) nil on-complete on-error)))
+
 ;;
 ;; Public API:
 ;;
 
-
 (defn execute
   ([interceptors request on-complete on-error]
-   (-> (new Context request nil nil (q/into-queue interceptors) nil on-complete on-error)
+   (-> (context request interceptors on-complete on-error)
        (enter)
        (leave)
        (deliver-result))
    nil)
   ([interceptors request]
-   (-> (new Context request nil nil (q/into-queue interceptors) nil nil nil)
+   (-> (context request interceptors)
        (enter)
        (leave)
-       (wait-result)
-       (throw-if-error!)
-       :response)))
+       (await-result))))

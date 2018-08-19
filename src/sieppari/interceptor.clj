@@ -41,12 +41,5 @@
 
   ; nil -> nil, nop:
   nil
-  (into-interceptor [t]
+  (into-interceptor [_]
     nil))
-
-(defn into-interceptors
-  "Accepts a seq of interceptor maps, Interceptors, nils or
-  handler functions, returns a seq of Interceptor records with
-  nils removed."
-  [interceptors]
-  (keep into-interceptor interceptors))

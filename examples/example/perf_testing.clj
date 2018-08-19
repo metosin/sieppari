@@ -5,68 +5,124 @@
             [sieppari.async.core-async]
             [io.pedestal.interceptor :as pi]
             [io.pedestal.interceptor.chain :as pc]
+            [manifold.deferred :as d]
             [clojure.core.async :as a]))
 
+(set! *warn-on-reflection* true)
+
+(defn raw-title [color s]
+  (println (str color (apply str (repeat (count s) "#")) "\u001B[0m"))
+  (println (str color s "\u001B[0m"))
+  (println (str color (apply str (repeat (count s) "#")) "\u001B[0m")))
+
+(def title (partial raw-title "\u001B[35m"))
+(def suite (partial raw-title "\u001B[32m"))
+
+(defmacro bench! [name & body]
+  `(do
+     (title ~name)
+     (assert (= ~@body {}))
+     (let [{[lower#] :lower-q :as res#} (criterium/quick-benchmark (do ~@body) nil)]
+       (println "\u001B[32m\n" (format "%.2fµs" (* 1000000 lower#)) "\u001B[0m")
+       (println)
+       (criterium/report-result res#))
+     (println)))
+
 (defn make-capture-result-interceptor [p]
-  {:leave (fn [ctx]
-            (deliver p (:response ctx))
-            ctx)})
+  (pi/interceptor
+    {:leave (fn [ctx]
+              (deliver p (:response ctx))
+              ctx)}))
 
 (defn run-simple-perf-test [n]
   ; Pedestal requires that at least one of :enter, :leave or :error is defined:
   (let [sync-interceptor {:enter identity}
-
         async-interceptor {:enter (fn [ctx] (a/go ctx))}
 
-        sync-interceptors (concat (repeat n sync-interceptor)
-                                  [identity])
+        sync-interceptors (concat (repeat n sync-interceptor) [identity])
+        async-interceptors (concat (repeat n {:enter (fn [ctx] (a/go ctx))}) [identity])
 
-        async-interceptors (concat (repeat n async-interceptor)
-                                   [identity])
-
-        p-sync-chain (doall (map pi/interceptor sync-interceptors))
+        p-context {:request {}}
+        p-sync-chain (mapv pi/interceptor sync-interceptors)
+        p-async-chain (map pi/interceptor (concat (repeat 10 async-interceptor) [identity]))
 
         s-sync-chain (sq/into-queue sync-interceptors)
-        s-async-chain (sq/into-queue async-interceptors)]
-    (println "\n\nn =" n)
+        s-async-chain (sq/into-queue async-interceptors)
+        s-manifold-chain (sq/into-queue
+                           (concat (repeat n {:enter (fn [ctx] (d/future ctx))}) [identity]))
 
-    (do (println "\n\npedestal sync:")
-        (criterium/quick-bench
-          (->> p-sync-chain
-               (pc/enqueue {})
-               (pc/execute))))
+        s-future-chain (sq/into-queue
+                         (concat (repeat n {:enter (fn [ctx] (future ctx))}) [identity]))
 
-    (do (println "\n\npedestal async:")
-        (criterium/quick-bench
-          (let [p (promise)
-                interceptors (concat [(make-capture-result-interceptor p)]
-                                     (repeat 10 async-interceptor)
-                                     [identity])]
-            (->> (map pi/interceptor interceptors)
-                 (pc/enqueue {})
-                 (pc/execute))
-            @p)))
+        s-delay-chain (sq/into-queue
+                        (concat (repeat n {:enter (fn [ctx] (delay ctx))}) [identity]))]
 
-    (println "\n\nsieppari sync chain, sync execute:")
-    (criterium/quick-bench
+    (println "\n... executing chain of" n "enters\n")
+
+    ;; 8.2µs
+    (bench!
+      "pedestal: sync"
+      (->> p-sync-chain
+           (pc/enqueue p-context)
+           (pc/execute)
+           :response))
+
+    ;; 99µs
+    (bench!
+      "pedestal: core.async"
+      (let [p (promise)]
+        (->> (cons (make-capture-result-interceptor p) p-async-chain)
+             (pc/enqueue p-context)
+             (pc/execute))
+        @p))
+
+    ;; 1.3µs
+    (bench!
+      "sieppari: sync (sync)"
       (s/execute s-sync-chain {}))
 
-    (println "\n\nsieppari sync chain, async execute:")
-    (criterium/quick-bench
+    ;; 1.3µs
+    (bench!
+      "sieppari: sync (async)"
       (let [p (promise)]
         (s/execute s-sync-chain {} (partial deliver p) identity)
         @p))
 
-    (println "\n\nsieppari async chain, sync execute:")
-    (criterium/quick-bench
+    ;; 61µs
+    (bench!
+      "sieppari: core.async (sync)"
       (s/execute s-async-chain {}))
 
-    (println "\n\nsieppari async chain, async execute:")
-    (criterium/quick-bench
+    ;; 60µs
+    (bench!
+      "sieppari: core.async (async)"
       (let [p (promise)]
         (s/execute s-async-chain {} (partial deliver p) identity)
         @p))
+
+    ;; 140µs
+    (bench!
+      "sieppari: future (async)"
+      (let [p (promise)]
+        (s/execute s-future-chain {} (partial deliver p) identity)
+        @p))
+
+    ;; 84µs
+    (bench!
+      "sieppari: delay (async)"
+      (let [p (promise)]
+        (s/execute s-delay-chain {} (partial deliver p) identity)
+        @p))
+
+    #_(bench!
+        "sieppari: deferred (async)"
+        (let [p (promise)]
+          (s/execute s-manifold-chain {} (partial deliver p) identity)
+          @p))
     ))
 
 (defn -main [& _]
-  (run-simple-perf-test 100))
+  (run-simple-perf-test 10))
+
+(comment
+  (-main))
