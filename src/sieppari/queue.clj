@@ -11,9 +11,10 @@
 
   clojure.lang.ISeq
   (into-queue [t]
-    (into clojure.lang.PersistentQueue/EMPTY
-          (keep i/into-interceptor)
-          t))
+    (if (seq t)
+      (into clojure.lang.PersistentQueue/EMPTY
+            (keep i/into-interceptor)
+            t)))
 
   clojure.lang.Seqable
   (into-queue [t]
