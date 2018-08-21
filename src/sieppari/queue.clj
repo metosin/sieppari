@@ -17,4 +17,7 @@
 
   clojure.lang.Seqable
   (into-queue [t]
-    (into-queue (seq t))))
+    (into-queue (seq t)))
+
+  nil
+  (into-queue [_]))
