@@ -23,31 +23,64 @@ If you are familiar with interceptors you might want to jump to `Differences to 
 
 ```clj
 (ns example.simple
-  (:require [sieppari.core :as s]
-            [sieppari.execute :as se]))
+  (:require [sieppari.core :as sieppari]))
 
-;; Simple interceptor, in enter update value in `[:request :x]` with `inc`:
-
+;; interceptor, in enter update value in `[:request :x]` with `inc`
 (def inc-x-interceptor
   {:enter (fn [ctx]
             (update-in ctx [:request :x] inc))})
 
-;; Simple handler, take `:x` from request, apply `inc`, and
-;; return an map with `:y`.
-
+;; handler, take `:x` from request, apply `inc`, and return an map with `:y`
 (defn handler [request]
   {:y (inc (:x request))})
 
-(def interceptor-chain (s/into-interceptors [inc-x-interceptor
-                                             handler]))
-
-(se/execute interceptor-chain {:x 40})
+(sieppari/execute 
+  [inc-x-interceptor handler] 
+  {:x 40})
 ;=> {:y 42}
 ```
 
 ## Async
 
-By default Sieppari has a support for clojure deferrables.
+Any step in the execution pipeline (`:enter`, `:leave`, `:error`) can return either a context map (synchronous execution) or an instance of [`AsyncContext`](https://github.com/metosin/sieppari/blob/develop/src/sieppari/async.clj) - indicating asynchronous execution.
+
+By default, clojure deferrables satisfy the `AsyncContext` protocol.
+
+Using `sieppari.core/execute` with async steps will block:
+
+```clj
+;; async interceptor, in enter double value of `[:response :y]`:
+(def multiply-y-interceptor
+  {:leave (fn [ctx]
+            (future
+              (Thread/sleep 1000)
+              (update-in ctx [:response :y] * 2)))})
+
+
+(sieppari/execute
+  [inc-x-interceptor multiply-y-interceptor handler]
+  {:x 40})
+; ... 1 second later:
+;=> {:y 84}
+```
+
+There is also a non-blocking version of `execute`:
+
+```clj
+(let [respond (promise)
+      raise (promise)]
+  (sieppari/execute
+    [inc-x-interceptor multiply-y-interceptor handler]
+    {:x 40}
+    respond
+    raise) ; returns nil immediately
+
+  (deref respond 2000 :timeout))
+; ... 1 second later:
+;=> {:y 84}
+```
+
+## External Async Libraries
 
 To add a support for one of the supported external async libraries, just add a dependency to them
 and you are ready. Currently supported async libraries are:
@@ -55,8 +88,24 @@ and you are ready. Currently supported async libraries are:
 * [core.async](https://github.com/clojure/core.async)
 * [Manifold](https://github.com/ztellman/manifold)
 
-To extend Sieppari async support to other libraries, extend a simple protocol 
-[sieppari.async/AsyncContext](https://github.com/metosin/sieppari/blob/develop/modules/sieppari.core/src/sieppari/async.clj).
+To extend Sieppari async support to other libraries, just extend `AsyncContext` protocol.
+
+### core.async example
+
+Requires dependency to `[org.clojure/core.async "0.4.474"]` or higher.
+
+```clj
+(require '[clojure.core.async :as a])
+
+(defn multiply-x-interceptor [n]
+  {:enter (fn [ctx]
+            (a/go (update-in ctx [:request :x] * n)))})
+
+(sieppari/execute
+  [inc-x-interceptor (multiply-x-interceptor 10) handler]
+  {:x 40})
+;=> {:y 411}
+```
 
 # Performance
 

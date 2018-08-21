@@ -2,17 +2,7 @@
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as s]
-            [clojure.core.async :as a]
-            [manifold.deferred :as md]))
-
-(let [d (md/deferred)]
-  (println (type d))
-  (md/on-realized d
-    (fn [x] (println "success!" x))
-    (fn [x] (println "error!" x)))
-  (future
-    (Thread/sleep 500)
-    (md/success! d "Jiihaa")))
+            [clojure.core.async :as a]))
 
 (def try-f #'s/try-f)
 
@@ -27,33 +17,29 @@
     (try-f {} (fn [_] (throw (ex-info "oh no" {}))))
     => {:error (throws-ex-info "oh no" {})}))
 
-(def throw-if-error! #'s/throw-if-error!)
+(def await-result #'s/await-result)
 
-(deftest throw-if-error!-test
-  (fact
-    (throw-if-error! {:response :foo})
-    => {:response :foo})
-  (fact
-    (throw-if-error! {:error (ex-info "oh no" {})})
-    => (throws-ex-info "oh no" {})))
-
-(def wait-result #'s/wait-result)
+(def exception (RuntimeException. "kosh"))
 
 (deftest wait-result-core-async-test
-  (fact
-    (wait-result :ctx) => :ctx)
-  (fact
-    (wait-result (a/go :ctx)) => (just :ctx))
-  (fact
-    (wait-result (a/go (a/go :ctx))) => (just :ctx)))
+  (facts "response"
+    (await-result {:response :ctx}) => :ctx
+    (await-result (a/go {:response :ctx})) => (just :ctx)
+    (await-result (a/go (a/go {:response :ctx}))) => (just :ctx))
+  (facts "error"
+    (await-result {:error exception}) => exception
+    (await-result (a/go {:error exception})) => exception
+    (await-result (a/go (a/go {:error exception}))) => exception))
 
 (deftest wait-result-deref-test
-  (fact
-    (wait-result :ctx) => :ctx)
-  (fact
-    (wait-result (future :ctx)) => (just :ctx))
-  (fact
-    (wait-result (future (future :ctx))) => (just :ctx)))
+  (facts "response"
+    (await-result {:response :ctx}) => :ctx
+    (await-result (future {:response :ctx})) => (just :ctx)
+    (await-result (future (future {:response :ctx}))) => (just :ctx))
+  (facts "exception"
+    (await-result {:error exception}) => exception
+    (await-result (future {:error exception})) => exception
+    (await-result (future (future {:error exception}))) => exception))
 
 (def deliver-result #'s/deliver-result)
 

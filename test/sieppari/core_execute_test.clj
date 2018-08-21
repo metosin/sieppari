@@ -133,6 +133,11 @@
         (s/execute 41))
     => :response-by-b))
 
+(deftest nil-response-test
+  (fact "nil response is allowed"
+    (s/execute [(constantly nil)] {})
+    => nil))
+
 (defn make-logging-interceptor [name]
   {:name name
    :enter (fn [ctx]
