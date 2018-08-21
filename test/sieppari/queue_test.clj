@@ -16,4 +16,10 @@
     (fact
       (into-queue the-queue) => (partial identical? the-queue)))
   (fact
-    (into-queue [{}]) => [Interceptor]))
+    (into-queue [{}]) => [Interceptor])
+  (fact
+    (into-queue []) => nil)
+  (fact
+    (into-queue '()) => nil)
+  (fact
+    (into-queue nil) => nil))

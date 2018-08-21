@@ -138,6 +138,11 @@
     (s/execute [(constantly nil)] {})
     => nil))
 
+(deftest empty-interceptors-test
+  (facts "interceptor chain can be empty"
+    (s/execute [] {}) => nil
+    (s/execute nil {}) => nil))
+
 (defn make-logging-interceptor [name]
   {:name name
    :enter (fn [ctx]
