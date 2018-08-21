@@ -57,10 +57,10 @@
       (f result))))
 
 (defn- context
-  ([request interceptors]
-   (new Context request nil nil (q/into-queue interceptors) nil nil nil))
-  ([request interceptors on-complete on-error]
-   (new Context request nil nil (q/into-queue interceptors) nil on-complete on-error)))
+  ([request queue]
+   (new Context request nil nil queue nil nil nil))
+  ([request queue on-complete on-error]
+   (new Context request nil nil queue nil on-complete on-error)))
 
 ;;
 ;; Public API:
@@ -68,13 +68,15 @@
 
 (defn execute
   ([interceptors request on-complete on-error]
-   (-> (context request interceptors on-complete on-error)
-       (enter)
-       (leave)
-       (deliver-result))
+   (if-let [queue (q/into-queue interceptors)]
+     (-> (context request queue on-complete on-error)
+         (enter)
+         (leave)
+         (deliver-result)))
    nil)
   ([interceptors request]
-   (-> (context request interceptors)
-       (enter)
-       (leave)
-       (await-result))))
+   (if-let [queue (q/into-queue interceptors)]
+     (-> (context request queue)
+         (enter)
+         (leave)
+         (await-result)))))
