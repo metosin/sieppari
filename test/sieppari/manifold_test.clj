@@ -1,8 +1,8 @@
-(ns sieppari.core-async-test
+(ns sieppari.manifold-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as sc]
-            [clojure.core.async :refer [go <! <!!]]))
+            [manifold.deferred :as d]))
 
 (defn make-logging-interceptor [log name]
   {:name name
@@ -12,9 +12,9 @@
 
 (defn make-async-logging-interceptor [log name]
   {:name name
-   :enter (fn [ctx] (swap! log conj [:enter name]) (go ctx))
-   :leave (fn [ctx] (swap! log conj [:leave name]) (go ctx))
-   :error (fn [ctx] (swap! log conj [:error name]) (go ctx))})
+   :enter (fn [ctx] (swap! log conj [:enter name]) (d/success-deferred ctx))
+   :leave (fn [ctx] (swap! log conj [:leave name]) (d/success-deferred ctx))
+   :error (fn [ctx] (swap! log conj [:error name]) (d/success-deferred ctx))})
 
 (defn make-logging-handler [log]
   (fn [request]
@@ -24,7 +24,7 @@
 (defn make-async-logging-handler [log]
   (fn [request]
     (swap! log conj [:handler])
-    (go request)))
+    (d/success-deferred request)))
 
 (def request {:foo "bar"})
 (def error (ex-info "oh no" {}))
@@ -170,7 +170,7 @@
            (make-logging-interceptor log :c)
            (fn [_]
              (swap! log conj [:handler])
-             (go error))]
+             (d/success-deferred error))]
           (sc/execute request))
       =throws=> error)
     (fact
@@ -189,14 +189,14 @@
            (assoc (make-async-logging-interceptor log :b)
              :error (fn [ctx]
                       (swap! log conj [:error :b])
-                      (go
+                      (d/success-deferred
                         (-> ctx
                             (assoc :error nil)
                             (assoc :response :fixed-by-b)))))
            (make-logging-interceptor log :c)
            (fn [_]
              (swap! log conj [:handler])
-             (go error))]
+             (d/success-deferred error))]
           (sc/execute request))
       => :fixed-by-b)
     (fact
