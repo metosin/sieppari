@@ -19,7 +19,7 @@
 
 (def await-result #'s/await-result)
 
-(def exception (RuntimeException. "kosh"))
+(def error (RuntimeException. "kosh"))
 
 (deftest wait-result-core-async-test
   (facts "response"
@@ -27,9 +27,9 @@
     (await-result (a/go {:response :ctx})) => (just :ctx)
     (await-result (a/go (a/go {:response :ctx}))) => (just :ctx))
   (facts "error"
-    (await-result {:error exception}) => exception
-    (await-result (a/go {:error exception})) => exception
-    (await-result (a/go (a/go {:error exception}))) => exception))
+    (await-result {:error error}) =throws=> error
+    (await-result (a/go {:error error})) =throws=> error
+    (await-result (a/go (a/go {:error error}))) =throws=> error))
 
 (deftest wait-result-deref-test
   (facts "response"
@@ -37,9 +37,9 @@
     (await-result (future {:response :ctx})) => (just :ctx)
     (await-result (future (future {:response :ctx}))) => (just :ctx))
   (facts "exception"
-    (await-result {:error exception}) => exception
-    (await-result (future {:error exception})) => exception
-    (await-result (future (future {:error exception}))) => exception))
+    (await-result {:error error}) =throws=> error
+    (await-result (future {:error error})) =throws=> error
+    (await-result (future (future {:error error}))) =throws=> error))
 
 (def deliver-result #'s/deliver-result)
 
@@ -48,7 +48,7 @@
 (deftest deliver-result-test
   (let [p (promise)]
     (deliver-result {:response :r
-                     :on-complete (partial deliver p)
+                     :on-complete p
                      :on-error fail!})
     (fact {:timeout 10}
       @p => :r))
@@ -56,13 +56,13 @@
   (let [p (promise)]
     (deliver-result {:error (ex-info "oh no" {})
                      :on-complete fail!
-                     :on-error (partial deliver p)})
+                     :on-error p})
     (fact {:timeout 10}
       @p => (throws-ex-info "oh no" {})))
 
   (let [p (promise)]
     (deliver-result (a/go {:response :r
-                           :on-complete (partial deliver p)
+                           :on-complete p
                            :on-error fail!}))
     (fact {:timeout 10}
       @p => :r))
@@ -70,13 +70,13 @@
   (let [p (promise)]
     (deliver-result (a/go {:error (ex-info "oh no" {})
                            :on-complete fail!
-                           :on-error (partial deliver p)}))
+                           :on-error p}))
     (fact {:timeout 10}
       @p => (throws-ex-info "oh no" {})))
 
   (let [p (promise)]
     (deliver-result (future (a/go {:response :r
-                                   :on-complete (partial deliver p)
+                                   :on-complete p
                                    :on-error fail!})))
     (fact {:timeout 10}
       @p => :r)))

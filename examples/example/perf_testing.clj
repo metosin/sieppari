@@ -6,6 +6,7 @@
             [io.pedestal.interceptor :as pi]
             [io.pedestal.interceptor.chain :as pc]
             [manifold.deferred :as d]
+            [promesa.core :as p]
             [clojure.core.async :as a]))
 
 (set! *warn-on-reflection* true)
@@ -90,6 +91,7 @@
 (def sync-interceptor {:enter identity})
 (def async-interceptor {:enter #(a/go %)})
 (def deferred-interceptor {:enter d/success-deferred})
+(def promesa-interceptor {:enter p/promise})
 (def future-interceptor {:enter #(future %)})
 (def delay-interceptor {:enter #(delay %)})
 
@@ -112,7 +114,8 @@
 
         s-deferred-chain (create-s-chain n deferred-interceptor)
         s-future-chain (create-s-chain n future-interceptor)
-        s-delay-chain (create-s-chain n delay-interceptor)]
+        s-delay-chain (create-s-chain n delay-interceptor)
+        s-promesa-chain (create-s-chain n promesa-interceptor)]
 
     (suite (str "queue of " n))
 
@@ -183,55 +186,53 @@
       "sieppari: deferred (async)"
       (let [p (promise)]
         (s/execute s-deferred-chain {} p identity)
-        @p))))
+        @p))
+
+    ;; 36µs
+    (bench!
+      "sieppari: promesa (sync)"
+      (s/execute s-promesa-chain {}))
+
+    ;; 38µs
+    (bench!
+      "sieppari: promesa (async)"
+      (let [p (promise)]
+        (s/execute s-promesa-chain {} p identity)
+        @p))
+    ))
 
 (defn one-async-in-sync-pipeline-test [n]
 
-  (suite (str "homogeneous queue of " n))
+  (doseq [[name chain] [[(str "homogeneous queue of " n) create-s-chain]
+                        [(str "queue of " (dec n) " sync + 1 async step") create-s-mixed-chain]]
+          :let [_ (suite name)]
+          [name interceptor] [["identity" identity]
+                              ["deferred" deferred-interceptor]
+                              ["core.async" async-interceptor]
+                              ["promesa" promesa-interceptor]]]
 
-  ;; 2µs
-  ;; 1.4µs (iterator)
-  (let [chain (create-s-chain n identity)]
-    (bench!
-      "sieppari: identity"
-      (let [p (promise)]
-        (s/execute chain {} p identity)
-        @p)))
+    (let [interceptors (chain n interceptor)]
+      (bench!
+        name
+        (let [p (promise)]
+          (s/execute interceptors {} p identity)
+          @p)))
 
-  ;; 86µs
-  (let [chain (create-s-chain n deferred-interceptor)]
-    (bench!
-      "sieppari: deferred"
-      (let [p (promise)]
-        (s/execute chain {} p identity)
-        @p)))
+    ;; 1.8µs
+    ;; 1.7µs
+    "identity"
 
-  ;; 60µs
-  (let [chain (create-s-chain n async-interceptor)]
-    (bench!
-      "sieppari: core.async"
-      (let [p (promise)]
-        (s/execute chain {} p identity)
-        @p)))
+    ;; 93µs
+    ;; 20µs
+    "deferred"
 
+    ;; 54µs
+    ;; 20µs
+    "core.async"
 
-  (suite (str "queue of " (dec n) " sync + 1 async step"))
-
-  ;; 19µs
-  (let [chain (create-s-mixed-chain n deferred-interceptor)]
-    (bench!
-      "sieppari: deferred"
-      (let [p (promise)]
-        (s/execute chain {} p identity)
-        @p)))
-
-  ;; 21µs
-  (let [chain (create-s-mixed-chain n async-interceptor)]
-    (bench!
-      "sieppari: core.async"
-      (let [p (promise)]
-        (s/execute chain {} p identity)
-        @p))))
+    ;; 40µs
+    ;; 19µs
+    "promesa"))
 
 (defn -main [& _]
   (run-simple-perf-test 10)

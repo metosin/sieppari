@@ -44,8 +44,10 @@
 ;; Helper: always throws an exception with specific marker
 ;; in data part:
 
+(def error (ex-info "oh no" {::error-marker true}))
+
 (defn always-throw [ctx]
-  (throw (ex-info "oh no" {::error-marker true})))
+  (throw error))
 
 ;; Helper: return error handler function that ensures
 ;; that `ctx` contains an exception caused by `always-throw`,
@@ -84,7 +86,7 @@
         (assoc-in [b-index :error] identity)
         (assoc-in [a-index :error] identity)
         (s/execute 41))
-    => (throws-ex-info "oh no")))
+    =throws=> error))
 
 (deftest enter-c-causes-exception-a-handles-test
   (fact ":c enter causes an exception, :b sees error, :a handles"
