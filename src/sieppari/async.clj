@@ -15,7 +15,6 @@
   clojure.lang.IDeref
   (async? [_] true)
   (continue [c f] (let [p (promise)]
-                    (future
-                      (deliver p (f @c)))
+                    (future (p (f @c)))
                     p))
   (await [c] @c))

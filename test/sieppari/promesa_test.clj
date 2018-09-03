@@ -1,8 +1,8 @@
-(ns sieppari.core-async-test
+(ns sieppari.promesa-test
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as sc]
-            [clojure.core.async :refer [go <! <!!]]))
+            [promesa.core :as p]))
 
 (defn make-logging-interceptor [log name]
   {:name name
@@ -12,9 +12,9 @@
 
 (defn make-async-logging-interceptor [log name]
   {:name name
-   :enter (fn [ctx] (swap! log conj [:enter name]) (go ctx))
-   :leave (fn [ctx] (swap! log conj [:leave name]) (go ctx))
-   :error (fn [ctx] (swap! log conj [:error name]) (go ctx))})
+   :enter (fn [ctx] (swap! log conj [:enter name]) (p/promise ctx))
+   :leave (fn [ctx] (swap! log conj [:leave name]) (p/promise ctx))
+   :error (fn [ctx] (swap! log conj [:error name]) (p/promise ctx))})
 
 (defn make-logging-handler [log]
   (fn [request]
@@ -24,7 +24,7 @@
 (defn make-async-logging-handler [log]
   (fn [request]
     (swap! log conj [:handler])
-    (go request)))
+    (p/promise request)))
 
 (def request {:foo "bar"})
 (def error (ex-info "oh no" {}))
@@ -170,7 +170,7 @@
            (make-logging-interceptor log :c)
            (fn [_]
              (swap! log conj [:handler])
-             (go error))]
+             (p/resolved error))]
           (sc/execute request))
       =throws=> error)
     (fact
@@ -189,14 +189,14 @@
            (assoc (make-async-logging-interceptor log :b)
              :error (fn [ctx]
                       (swap! log conj [:error :b])
-                      (go
+                      (p/promise
                         (-> ctx
                             (assoc :error nil)
                             (assoc :response :fixed-by-b)))))
            (make-logging-interceptor log :c)
            (fn [_]
              (swap! log conj [:handler])
-             (go error))]
+             (p/resolved error))]
           (sc/execute request))
       => :fixed-by-b)
     (fact

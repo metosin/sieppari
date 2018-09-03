@@ -87,10 +87,11 @@ and you are ready. Currently supported async libraries are:
 
 * [core.async](https://github.com/clojure/core.async)
 * [Manifold](https://github.com/ztellman/manifold)
+* [Promesa](http://funcool.github.io/promesa/latest)
 
 To extend Sieppari async support to other libraries, just extend `AsyncContext` protocol.
 
-### core.async example
+## core.async
 
 Requires dependency to `[org.clojure/core.async "0.4.474"]` or higher.
 
@@ -105,6 +106,40 @@ Requires dependency to `[org.clojure/core.async "0.4.474"]` or higher.
   [inc-x-interceptor (multiply-x-interceptor 10) handler]
   {:x 40})
 ;=> {:y 411}
+```
+
+## manifold
+
+Requires dependency to `[manifold "0.1.8"]` or higher.
+
+```clj
+(require '[manifold.deferred :as d])
+
+(defn minus-x-interceptor [n]
+  {:enter (fn [ctx]
+            (d/success-deferred (update-in ctx [:request :x] - n)))})
+
+(sieppari/execute
+  [inc-x-interceptor (minus-x-interceptor 10) handler]
+  {:x 40})
+;=> {:y 31}
+```
+
+## promesa
+
+Requires dependency to `[funcool/promesa "1.9.0"]` or higher.
+
+```clj
+(require '[promesa.core :as p])
+
+(defn divide-x-interceptor [n]
+  {:enter (fn [ctx]
+            (p/promise (update-in ctx [:request :x] / n)))})
+
+(sieppari/execute
+  [inc-x-interceptor (divide-x-interceptor 10) handler]
+  {:x 40})
+;=> {:y 41/10}
 ```
 
 # Performance
@@ -131,39 +166,29 @@ in async case they all return `core.async` channels on enter and leave.
 
 # Differences to Pedestal
 
-## The **error** handler
+## Execution
 
-In _Pedestal_ the `error` handler takes two arguments, the `ctx` and
-the exception.
+* `io.pedestal.interceptor.chain/execute` executes _Contexts_
+* `sieppari.core/execute` executes _Requests_ (which are internally wrapped inside a _Context_ for interceptors)
 
-In _Sieppari_ the `error` handlers takes just one argument, the `ctx`,
-and the exception is in the `ctx` under the key `:error`.
+## Errors
 
-In _Pedestal_ the `error` handler resolves the exception by returning
-the `ctx`, and continues the **error** stage by re-throwing the exception.
-
-In _Sieppari_ the `error` handler resolves the exception by returning
-the `ctx` with the `:error` removed. To continue in the **error** 
-stage, just return the `ctx` with the exception still at `:error`. 
-
-In _Pedestal_ the exception are wrapped in other exceptions. 
-
-In _Sieppari_ exceptions are not wrapped.
-
-_Pedestal_ interception execution catches `java.lang.Throwable` for error 
-processing. _Sieppari_ catches `java.lang.Exception`. This means that things 
-like out of memory or class loader failures are not captured by _Sieppari_.
+* In _Pedestal_ the `error` handler takes two arguments, the `ctx` and the exception.
+* In _Sieppari_ the `error` handlers takes just one argument, the `ctx`, and the exception is in the `ctx` under the key `:error`.
+* In _Pedestal_ the `error` handler resolves the exception by returning the `ctx`, and continues the **error** stage by re-throwing the exception.
+* In _Sieppari_ the `error` handler resolves the exception by returning the `ctx` with the `:error` removed. To continue in the **error**  stage, just return the `ctx` with the exception still at `:error`. 
+*  In _Pedestal_ the exception are wrapped in other exceptions. 
+* In _Sieppari_ exceptions are not wrapped.
+* _Pedestal_ interception execution catches `java.lang.Throwable` for error processing. _Sieppari_ catches `java.lang.Exception`. This means that things like out of memory or class loader failures are not captured by _Sieppari_.
 
 ## Async
 
-_Pedestal_ transfers thread local bindings from call-site into async interceptors.
-_Sieppari_ does not support this.
+* _Pedestal_ transfers thread local bindings from call-site into async interceptors.
+* _Sieppari_ does not support this.
 
 # Thanks
 
 * Original idea from [Pedestal Interceptors](https://github.com/pedestal/pedestal/tree/master/interceptor).
-* Motivation @ikitommi
-* Topology sorting @nilern 
 
 ## License
 

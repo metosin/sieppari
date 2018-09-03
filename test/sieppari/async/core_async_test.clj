@@ -10,11 +10,11 @@
     (as/async? (a/go "foo")) => true))
 
 (deftest continue-test
-  (let [p (promise)]
+  (let [respond (promise)]
     (as/continue (a/go "foo")
-                 (partial deliver p))
+                 (partial deliver respond))
     (fact {:timeout 100}
-      @p => "foo")))
+      @respond => "foo")))
 
 (deftest await-test
   (fact

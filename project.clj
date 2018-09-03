@@ -12,6 +12,7 @@
                                   ;; Add-ons:
                                   [org.clojure/core.async "0.4.474"]
                                   [manifold "0.1.8"]
+                                  [funcool/promesa "1.9.0"]
                                   ;; Dev:
                                   [org.clojure/tools.namespace "0.2.11"]
                                   ;; Testing:
