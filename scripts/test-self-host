@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -euo pipefail
+
+cp="src:test/cljs:test/cljc:$(clojure -Srepro -A:self-host -Spath)"
+
+lumo -K -c "$cp" dev/lumo_runner.cljs

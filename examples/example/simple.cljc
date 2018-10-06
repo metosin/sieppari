@@ -17,5 +17,6 @@
             inc-interceptor
             handler])
 
-(s/execute chain {:x 20})
+#?(:clj (s/execute chain {:x 20})
+   :cljs (s/execute chain {:x 20} prn prn))
 ;=> {:y 42}

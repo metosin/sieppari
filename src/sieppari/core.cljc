@@ -1,8 +1,10 @@
 (ns sieppari.core
+  #?(:cljs (:refer-clojure :exclude [iter]))
   (:require [sieppari.queue :as q]
             [sieppari.async :as a]
-            [sieppari.async.ext-lib-support])
-  (:import (java.util Iterator)))
+            #?(:clj [sieppari.async.ext-lib-support]
+               :cljs [goog.iter :as iter]))
+  #?(:clj (:import (java.util Iterator))))
 
 (defrecord Context [request response error queue stack on-complete on-error])
 
@@ -10,14 +12,14 @@
   (if f
     (try
       (f ctx)
-      (catch Exception e
+      (catch #?(:clj Exception :cljs :default) e
         (assoc ctx :error e)))
     ctx))
 
 (defn- leave [ctx]
   (if (a/async? ctx)
     (a/continue ctx leave)
-    (let [^Iterator it (:stack ctx)]
+    (let [it (:stack ctx)]
       (if (.hasNext it)
         (let [stage (if (:error ctx) :error :leave)
               f (-> it .next stage)]
@@ -25,7 +27,8 @@
         ctx))))
 
 (defn- iter [v]
-  (clojure.lang.RT/iter v))
+  #?(:clj (clojure.lang.RT/iter v)
+     :cljs (cljs.core/iter v)))
 
 (defn- enter [ctx]
   (if (a/async? ctx)
@@ -37,15 +40,18 @@
         (assoc ctx :stack (iter stack))
         (recur (-> ctx
                    (assoc :queue (pop queue))
-                   (assoc :stack (conj stack interceptor))
+                   (assoc :stack #?(:clj (conj stack interceptor)
+                                    :cljs (doto (or stack (array))
+                                            (.unshift interceptor))))
                    (try-f (:enter interceptor))))))))
 
-(defn- await-result [ctx]
-  (if (a/async? ctx)
-    (recur (a/await ctx))
-    (if-let [error (:error ctx)]
-      (throw error)
-      (:response ctx))))
+#?(:clj
+   (defn- await-result [ctx]
+     (if (a/async? ctx)
+       (recur (a/await ctx))
+       (if-let [error (:error ctx)]
+         (throw error)
+         (:response ctx)))))
 
 (defn- deliver-result [ctx]
   (if (a/async? ctx)
@@ -72,11 +78,15 @@
      (-> (context request queue on-complete on-error)
          (enter)
          (leave)
-         (deliver-result)))
+         (deliver-result))
+     ;; It is always necessary to call on-complete or the computation would not
+     ;; keep going.
+     (on-complete nil))
    nil)
-  ([interceptors request]
-   (if-let [queue (q/into-queue interceptors)]
-     (-> (context request queue)
-         (enter)
-         (leave)
-         (await-result)))))
+  #?(:clj
+     ([interceptors request]
+      (if-let [queue (q/into-queue interceptors)]
+        (-> (context request queue)
+            (enter)
+            (leave)
+            (await-result))))))

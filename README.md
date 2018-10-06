@@ -5,7 +5,7 @@ for common async libraries.
 
 > Noun
 > **Siepata (Intercept)**
-> 
+>
 >   sieppari, _someone or something that intercepts_
 
 ## What it does
@@ -34,8 +34,8 @@ If you are familiar with interceptors you might want to jump to `Differences to 
 (defn handler [request]
   {:y (inc (:x request))})
 
-(sieppari/execute 
-  [inc-x-interceptor handler] 
+(sieppari/execute
+  [inc-x-interceptor handler]
   {:x 40})
 ;=> {:y 42}
 ```
@@ -145,13 +145,13 @@ Requires dependency to `[funcool/promesa "1.9.0"]` or higher.
 # Performance
 
 _Sieppari_ aims for minimal functionality and can therefore be
-quite fast. Complete example to test performance is 
+quite fast. Complete example to test performance is
 [included](https://github.com/metosin/sieppari/blob/develop/examples/example/perf_testing.clj).
 
-The example creates a chain of 100 interceptors that have 
+The example creates a chain of 100 interceptors that have
 `clojure.core/identity` as `:enter` and `:leave` functions and then
 executes the chain. The async tests also have 100 interceptors, but
-in async case they all return `core.async` channels on enter and leave. 
+in async case they all return `core.async` channels on enter and leave.
 
 | Executor          | Execution time lower quantile |
 | ----------------- | ----------------------------- |
@@ -176,8 +176,8 @@ in async case they all return `core.async` channels on enter and leave.
 * In _Pedestal_ the `error` handler takes two arguments, the `ctx` and the exception.
 * In _Sieppari_ the `error` handlers takes just one argument, the `ctx`, and the exception is in the `ctx` under the key `:error`.
 * In _Pedestal_ the `error` handler resolves the exception by returning the `ctx`, and continues the **error** stage by re-throwing the exception.
-* In _Sieppari_ the `error` handler resolves the exception by returning the `ctx` with the `:error` removed. To continue in the **error**  stage, just return the `ctx` with the exception still at `:error`. 
-*  In _Pedestal_ the exception are wrapped in other exceptions. 
+* In _Sieppari_ the `error` handler resolves the exception by returning the `ctx` with the `:error` removed. To continue in the **error**  stage, just return the `ctx` with the exception still at `:error`.
+*  In _Pedestal_ the exception are wrapped in other exceptions.
 * In _Sieppari_ exceptions are not wrapped.
 * _Pedestal_ interception execution catches `java.lang.Throwable` for error processing. _Sieppari_ catches `java.lang.Exception`. This means that things like out of memory or class loader failures are not captured by _Sieppari_.
 
@@ -185,6 +185,23 @@ in async case they all return `core.async` channels on enter and leave.
 
 * _Pedestal_ transfers thread local bindings from call-site into async interceptors.
 * _Sieppari_ does not support this.
+
+### REPL
+
+In order to start a node figwheel REPL for local development use:
+
+```shell
+clojure -A:fig:test-cljs:nrepl
+```
+
+Then in the REPL:
+
+```
+user=> (require 'figwheel.main.api)
+nil
+user=> (figwheel.main.api/start "dev")
+...
+```
 
 # Thanks
 
