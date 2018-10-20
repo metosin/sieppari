@@ -7,14 +7,12 @@
 #?(:clj
    (extend-protocol sa/AsyncContext
      CompletionStage
-     (async? [_] true)
      (continue [this f] (p/chain this f))
      (await [this] (deref this))))
 
 #?(:cljs
    (extend-protocol sa/AsyncContext
      p/Promise
-     (async? [_] true)
      (continue [this f] (p/chain this f))
 
      ;; We need to extend js/Promise again here because it seems like promesa
@@ -24,5 +22,4 @@
      ;; Without the protocol extension on js/Promise is lost. See also:
      ;; https://github.com/funcool/promesa/issues/58
      js/Promise
-     (async? [_] true)
      (continue [t f] (.then t f))))
