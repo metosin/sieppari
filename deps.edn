@@ -6,14 +6,14 @@
 
                                      ;; Add-ons:
                                      org.clojure/core.async {:mvn/version "0.4.474"}
-                                     funcool/promesa {:mvn/version "1.9.0"}}}
+                                     funcool/promesa {:mvn/version "1.10.0-SNAPSHOT"}}}
 
            :test-clj {:extra-paths ["test/clj" "test/cljc"]
                       :extra-deps  {org.clojure/clojure {:mvn/version "1.9.0"}
                                     ;; Add-ons:
                                     org.clojure/core.async {:mvn/version "0.4.474"}
                                     manifold {:mvn/version "0.1.8"}
-                                    funcool/promesa {:mvn/version "1.9.0"}
+                                    funcool/promesa {:mvn/version "1.10.0-SNAPSHOT"}
                                     ;; Dev:
                                     org.clojure/tools.namespace {:mvn/version "0.2.11"}
                                     ;; Testing:
