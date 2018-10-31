@@ -85,7 +85,7 @@
    nil)
   #?(:clj
      ([interceptors request]
-      (if-let [queue (q/into-queue interceptors)]
+      (when-let [queue (q/into-queue interceptors)]
         (-> (context request queue)
             (enter)
             (leave)
