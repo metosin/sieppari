@@ -4,22 +4,18 @@
             [sieppari.interceptor :as si]
             [sieppari.queue :as sq]))
 
-(def empty-queue
-  #?(:clj clojure.lang.PersistentQueue/EMPTY
-     :cljs #queue []))
-
 (deftest terminate-test
   (let [queue (sq/into-queue [{:name :a} {:name :b}])]
-    (is (= {:queue empty-queue}
+    (is (= {:queue sq/empty-queue}
            (sc/terminate {:queue queue})))
 
     (is (= (sc/terminate {:queue queue} :the-response)
-           {:queue empty-queue
+           {:queue sq/empty-queue
             :response :the-response}))))
 
 (deftest inject-test
   (let [queue (sq/into-queue [{:name :a} {:name :b}])]
-    (is (= {:queue (conj empty-queue
+    (is (= {:queue (conj sq/empty-queue
                          (si/map->Interceptor {:name :x :enter nil :leave nil :error nil})
                          (si/map->Interceptor {:name :a :enter nil :leave nil :error nil})
                          (si/map->Interceptor {:name :b :enter nil :leave nil :error nil}))}

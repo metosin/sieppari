@@ -4,7 +4,7 @@
 (defprotocol IntoQueue
   (into-queue [t]))
 
-(def ^:private empty-queue
+(def empty-queue
   #?(:clj clojure.lang.PersistentQueue/EMPTY
      :cljs #queue []))
 
