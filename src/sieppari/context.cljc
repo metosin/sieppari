@@ -1,6 +1,5 @@
 (ns sieppari.context
-  (:require [sieppari.queue :as q])
-  (:import (clojure.lang PersistentQueue)))
+  (:require [sieppari.queue :as q]))
 
 (defn terminate
   "Removes all remaining interceptors from context's execution queue.
@@ -8,10 +7,10 @@
   functions and begins executing the :leave functions.
   Two arity version allows setting the response at the same call."
   ([ctx]
-   (assoc ctx :queue PersistentQueue/EMPTY))
+   (assoc ctx :queue q/empty-queue))
   ([ctx response]
    (-> ctx
-       (assoc :queue PersistentQueue/EMPTY)
+       (assoc :queue q/empty-queue)
        (assoc :response response))))
 
 (defn inject

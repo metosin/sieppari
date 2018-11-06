@@ -1,0 +1,9 @@
+{:main sieppari.core
+ :target :nodejs
+ :optimizations :none
+ :output-dir ".cljs"
+ :output-to ".cljs/sieppari.js"
+ :source-map true
+ :source-map-timestamp false
+ :install-deps true
+ :npm-deps {"source-map-support" "0.5.9"}}

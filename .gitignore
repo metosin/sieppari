@@ -3,3 +3,8 @@ pom.xml
 pom.xml.asc
 /.lein-*
 /.nrepl-port
+/.cpcache
+/.cljs
+/node_modules
+/package*
+/.lumo_cache/
