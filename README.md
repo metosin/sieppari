@@ -1,6 +1,6 @@
 # sieppari
 
-Small, fast, and complete interceptor library with built-in support
+Small, fast, and complete interceptor library for Clojure/Script with built-in support
 for common async libraries.
 
 > Noun
@@ -85,9 +85,9 @@ There is also a non-blocking version of `execute`:
 To add a support for one of the supported external async libraries, just add a dependency to them
 and you are ready. Currently supported async libraries are:
 
-* [core.async](https://github.com/clojure/core.async)
-* [Manifold](https://github.com/ztellman/manifold)
-* [Promesa](http://funcool.github.io/promesa/latest)
+* [core.async](https://github.com/clojure/core.async) - clj & cljs
+* [Manifold](https://github.com/ztellman/manifold) - clj
+* [Promesa](http://funcool.github.io/promesa/latest) - clj & cljs
 
 To extend Sieppari async support to other libraries, just extend `AsyncContext` protocol.
 
