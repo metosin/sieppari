@@ -12,5 +12,5 @@
 
 #?(:cljs
    (extend-protocol sa/AsyncContext
-     p/Promise
+     js/Promise
      (continue [this f] (p/chain this f))))
