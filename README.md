@@ -127,7 +127,7 @@ Requires dependency to `[manifold "0.1.8"]` or higher.
 
 ## promesa
 
-Requires dependency to `[funcool/promesa "1.9.0"]` or higher.
+Requires dependency to `[funcool/promesa "2.0.0-SNAPSHOT"]` or higher.
 
 ```clj
 (require '[promesa.core :as p])
