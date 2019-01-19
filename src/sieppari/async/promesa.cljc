@@ -1,7 +1,6 @@
 (ns sieppari.async.promesa
   (:require [sieppari.async :as sa]
-            [promesa.core :as p]
-            [clojure.string :as str])
+            [promesa.core :as p])
   #?(:clj (:import (java.util.concurrent CompletionStage))))
 
 #?(:clj
