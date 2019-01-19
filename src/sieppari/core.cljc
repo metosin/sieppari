@@ -2,7 +2,7 @@
   #?(:cljs (:refer-clojure :exclude [iter]))
   (:require [sieppari.queue :as q]
             [sieppari.async :as a]
-            #?(:clj [sieppari.async.ext-lib-support]
+            #?(:clj  [sieppari.async.ext-lib-support]
                :cljs [goog.iter :as iter]))
   #?(:clj (:import (java.util Iterator))))
 
@@ -22,27 +22,27 @@
     (let [it (:stack ctx)]
       (if (.hasNext it)
         (let [stage (if (:error ctx) :error :leave)
-              f (-> it .next stage)]
+              f     (-> it .next stage)]
           (recur (try-f ctx f)))
         ctx))))
 
 (defn- iter [v]
-  #?(:clj (clojure.lang.RT/iter v)
+  #?(:clj  (clojure.lang.RT/iter v)
      :cljs (cljs.core/iter v)))
 
 (defn- enter [ctx]
   (if (a/async? ctx)
     (a/continue ctx enter)
-    (let [queue (:queue ctx)
-          stack (:stack ctx)
+    (let [queue       (:queue ctx)
+          stack       (:stack ctx)
           interceptor (peek queue)]
       (if (or (not interceptor) (:error ctx))
         (assoc ctx :stack (iter stack))
         (recur (-> ctx
                    (assoc :queue (pop queue))
-                   (assoc :stack #?(:clj (conj stack interceptor)
+                   (assoc :stack #?(:clj  (conj stack interceptor)
                                     :cljs (doto (or stack (array))
-                                            (.unshift interceptor))))
+                                                (.unshift interceptor))))
                    (try-f (:enter interceptor))))))))
 
 #?(:clj
@@ -56,10 +56,10 @@
 (defn- deliver-result [ctx]
   (if (a/async? ctx)
     (a/continue ctx deliver-result)
-    (let [error (:error ctx)
-          result (or error (:response ctx))
+    (let [error    (:error ctx)
+          result   (or error (:response ctx))
           callback (if error :on-error :on-complete)
-          f (callback ctx identity)]
+          f        (callback ctx identity)]
       (f result))))
 
 (defn- context
