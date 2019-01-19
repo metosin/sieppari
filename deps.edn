@@ -22,4 +22,9 @@
 
            :self-host {:extra-deps {andare {:mvn/version "0.9.0" :exclusions [org.clojure/clojure org.clojure/clojurescript]}}}
 
-           :fig       {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.1.9"}}}}}
+           :fig          {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.1.9"}}}
+
+           :clojure-1.10 {:override-deps {org.clojure/clojure {:mvn/version "1.10.0"}}}
+
+           :dev          {:extra-paths ["dev"]}
+           :examples     {:extra-paths ["examples"]}}}
