@@ -82,14 +82,14 @@ There is also a non-blocking version of `execute`:
 
 ## External Async Libraries
 
-To add a support for one of the supported external async libraries, just add a dependency to them
-and you are ready. Currently supported async libraries are:
+To add a support for one of the supported external async libraries, just add a dependency to them and `require` the
+respective Sieppari namespace. Currently supported async libraries are:
 
-* [core.async](https://github.com/clojure/core.async) - clj & cljs
-* [Manifold](https://github.com/ztellman/manifold) - clj
-* [Promesa](http://funcool.github.io/promesa/latest) - clj & cljs
+* [core.async](https://github.com/clojure/core.async) - `sieppari.async.core-async`, clj & cljs
+* [Manifold](https://github.com/ztellman/manifold) - `sieppari.async.manifold` clj
+* [Promesa](http://funcool.github.io/promesa/latest) - `sieppari.async.promesa` clj & cljs
 
-To extend Sieppari async support to other libraries, just extend `AsyncContext` protocol.
+To extend Sieppari async support to other libraries, just extend the `AsyncContext` protocol.
 
 ## core.async
 

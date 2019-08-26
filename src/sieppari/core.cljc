@@ -2,8 +2,7 @@
   #?(:cljs (:refer-clojure :exclude [iter]))
   (:require [sieppari.queue :as q]
             [sieppari.async :as a]
-            #?(:clj  [sieppari.async.ext-lib-support]
-               :cljs [goog.iter :as iter]))
+            #?(:cljs [goog.iter :as iter]))
   #?(:clj (:import (java.util Iterator))))
 
 (defrecord Context [request response error queue stack on-complete on-error])
