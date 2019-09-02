@@ -22,7 +22,8 @@
                                   [io.pedestal/pedestal.interceptor "0.5.5"]
                                   [org.slf4j/slf4j-nop "1.7.25"]]}
              :examples {:source-paths ["examples"]}
-             :kaocha {:dependencies [[lambdaisland/kaocha "0.0-529"]]}
+             :kaocha {:dependencies [[lambdaisland/kaocha "0.0-529"]
+                                     [lambdaisland/kaocha-cljs "0.0-40"]]}
              :perf {:jvm-opts ^:replace ["-server" "-Xms4096m" "-Xmx4096m" "-Dclojure.compiler.direct-linking=true"]}}
 
   :aliases {"kaocha"    ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
