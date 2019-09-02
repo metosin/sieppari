@@ -1,3 +1,6 @@
 #kaocha/v1
-    {:tests [{:id   :unit-cljs
-              :type :kaocha.type/cljs}]}
+    {:tests [{:id :unit
+              :test-paths ["test/cljc" "test/clj"]}
+             {:id   :unit-cljs
+              :type :kaocha.type/cljs
+              :test-paths ["test/cljc" "test/cljs"]}]}
