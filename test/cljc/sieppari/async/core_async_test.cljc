@@ -22,4 +22,4 @@
 
 #?(:clj
    (deftest await-test
-     (= "foo" (as/await (a/go "foo")))))
+     (is (= "foo" (as/await (a/go "foo"))))))
