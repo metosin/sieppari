@@ -16,19 +16,15 @@
                                   ;; Dev:
                                   [org.clojure/tools.namespace "0.2.11"]
                                   ;; Testing:
-                                  [eftest "0.5.4"]
                                   [metosin/testit "0.4.0-SNAPSHOT"]
                                   ;; Perf testing:
                                   [criterium "0.4.4"]
                                   [io.pedestal/pedestal.interceptor "0.5.5"]
                                   [org.slf4j/slf4j-nop "1.7.25"]]}
              :examples {:source-paths ["examples"]}
+             :kaocha {:dependencies [[lambdaisland/kaocha "0.0-529"]]}
              :perf {:jvm-opts ^:replace ["-server" "-Xms4096m" "-Xmx4096m" "-Dclojure.compiler.direct-linking=true"]}}
 
-  :plugins [[lein-eftest "0.5.4"]]
-  :eftest {:multithread? false}
-  :test-selectors {:default (constantly true)
-                   :all (constantly true)}
-
-  :aliases {"perf" ["with-profile" "default,dev,examples,perf"]
+  :aliases {"kaocha"    ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
+            "perf"      ["with-profile" "default,dev,examples,perf"]
             "perf-test" ["perf" "run" "-m" "example.perf-testing"]})
