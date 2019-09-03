@@ -5,6 +5,7 @@
 * Remove automatic support for 3rd party async libs
   * Reduced `sieppari.core` load time by about 4 seconds.
   * `sieppari.async.*` namespaces now need to be `require`:d explicitly, you probably only need one of them.
+* Run tests with Kaocha on JVM and node, then consolidate build tools back to just Leiningen.
 
 # 0.0.0-alpha7 (2018-12-29)
 
