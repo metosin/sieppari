@@ -8,19 +8,20 @@
   :dependencies []
 
   :profiles {:dev {:source-paths ["dev" "test/clj" "test/cljc"]
-                   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
+                   :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
+                                  [org.clojure/clojurescript "1.10.520"]
                                   ;; Add-ons:
-                                  [org.clojure/core.async "0.4.490"]
+                                  [org.clojure/core.async "0.4.500"]
                                   [manifold "0.1.8"]
-                                  [funcool/promesa "2.0.0-SNAPSHOT"]
+                                  [funcool/promesa "3.0.0"]
                                   ;; Dev:
                                   [org.clojure/tools.namespace "0.2.11"]
                                   ;; Testing:
-                                  [metosin/testit "0.4.0-SNAPSHOT"]
+                                  [metosin/testit "0.4.0"]
                                   ;; Perf testing:
-                                  [criterium "0.4.4"]
-                                  [io.pedestal/pedestal.interceptor "0.5.5"]
-                                  [org.slf4j/slf4j-nop "1.7.25"]]}
+                                  [criterium "0.4.5"]
+                                  [io.pedestal/pedestal.interceptor "0.5.7"]
+                                  [org.slf4j/slf4j-nop "1.7.28"]]}
              :examples {:source-paths ["examples"]}
              :kaocha {:dependencies [[lambdaisland/kaocha "0.0-529"]
                                      [lambdaisland/kaocha-cljs "0.0-40"]]}
