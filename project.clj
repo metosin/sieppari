@@ -9,19 +9,17 @@
 
   :profiles {:test-common {:source-paths ["test/cljc"]
                            :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
-                                          [org.clojure/clojurescript "1.10.520"]
                                           ;; Add-ons:
                                           [org.clojure/core.async "0.4.500"]
                                           [manifold "0.1.8"]
                                           [funcool/promesa "3.0.0"]
-                                          ;; Dev:
-                                          [org.clojure/tools.namespace "0.2.11"]
                                           ;; Testing:
                                           [metosin/testit "0.4.0"]
                                           [lambdaisland/kaocha "0.0-529"]]}
              :test-clj    {:source-paths ["test/clj"]}
              :test-cljs   {:source-paths ["test/cljs"]
-                           :dependencies [[lambdaisland/kaocha-cljs "0.0-40"]]}
+                           :dependencies [[org.clojure/clojurescript "1.10.520"]
+                                          [lambdaisland/kaocha-cljs "0.0-40"]]}
              :dev         {:source-paths ["dev" "test/cljc" "test/clj"]
                            :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
                                           [org.clojure/clojurescript "1.10.520"]
