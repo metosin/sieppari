@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -euo pipefail
-
-clojure -A:fig:test-cljs -m figwheel.main \
-  -co dev.cljs.edn \
-  -m sieppari.runner \
