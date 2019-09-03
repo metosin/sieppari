@@ -7,7 +7,7 @@
 
   :dependencies []
 
-  :profiles {:dev {:source-paths ["dev" "test/clj" "test/cljc"]
+  :profiles {:dev {:source-paths ["dev" "test"]
                    :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
                                   [org.clojure/clojurescript "1.10.520"]
                                   ;; Add-ons:

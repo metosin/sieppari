@@ -15,7 +15,7 @@
     => {:foo "bar"})
   (fact
     (try-f {} (fn [_] (throw (ex-info "oh no" {}))))
-    => {:error (ex-info "oh no" {})}))
+    =in=> {:error (ex-info? "oh no" {})}))
 
 (def await-result #'s/await-result)
 
@@ -58,7 +58,7 @@
                      :on-complete fail!
                      :on-error p})
     (fact
-      @p =eventually=> (ex-info "oh no" {})))
+      @p =eventually=> (ex-info? "oh no" {})))
 
   (let [p (promise)]
     (deliver-result (a/go {:response :r
@@ -72,7 +72,7 @@
                            :on-complete fail!
                            :on-error p}))
     (fact
-      @p =eventually=> (ex-info "oh no" {})))
+      @p =eventually=> (ex-info? "oh no" {})))
 
   (let [p (promise)]
     (deliver-result (future (a/go {:response :r
