@@ -1,4 +1,5 @@
 /target
+/out
 /node_modules
 pom.xml
 pom.xml.asc
@@ -8,6 +9,7 @@ pom.xml.asc
 /.cljs
 /node_modules
 /package*
+.cljs_node_repl
 /.lumo_cache/
 .idea/
 *.iml
