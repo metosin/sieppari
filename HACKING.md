@@ -3,6 +3,6 @@
 ## CLI
 
 ```shell script
-lein kaocha unit # JVM
-lein kaocha unit-cljs # cljs on node
+lein kaocha-clj unit # JVM
+lein kaocha-cljs unit-cljs # cljs on node
 ```
