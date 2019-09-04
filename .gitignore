@@ -8,7 +8,6 @@ pom.xml.asc
 /.cpcache
 /.cljs
 /node_modules
-/package*
 .cljs_node_repl
 /.lumo_cache/
 .idea/
