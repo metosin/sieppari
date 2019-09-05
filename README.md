@@ -209,7 +209,7 @@ user=> (figwheel.main.api/start "dev")
 
 ## License
 
-Copyright &copy; 2018 [Metosin Oy](https://www.metosin.fi/)
+Copyright &copy; 2018-2019 [Metosin Oy](https://www.metosin.fi/)
 
 Distributed under the Eclipse Public License 2.0.
 
