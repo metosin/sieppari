@@ -5,13 +5,13 @@
             [promesa.core :as p]))
 
 (defn make-logging-interceptor [log name]
-  {:name name
+  {:name  name
    :enter (fn [ctx] (swap! log conj [:enter name]) ctx)
    :leave (fn [ctx] (swap! log conj [:leave name]) ctx)
    :error (fn [ctx] (swap! log conj [:error name]) ctx)})
 
 (defn make-async-logging-interceptor [log name]
-  {:name name
+  {:name  name
    :enter (fn [ctx] (swap! log conj [:enter name]) (p/promise ctx))
    :leave (fn [ctx] (swap! log conj [:leave name]) (p/promise ctx))
    :error (fn [ctx] (swap! log conj [:error name]) (p/promise ctx))})
@@ -48,7 +48,7 @@
                [:leave :b]
                [:leave :a]])
     (fact
-      response = request)))
+      response => request)))
 
 (deftest setup-async-test-test
   (let [log (atom [])
@@ -66,7 +66,7 @@
                [:leave :b]
                [:leave :a]])
     (fact
-      response = request)))
+      response => request)))
 
 (deftest async-b-sync-execute-test
   (let [log (atom [])
@@ -113,14 +113,14 @@
                      (sc/execute request))]
     (fact
       response => request)
-    (fact {:timeout 100}
-      @log => [[:enter :a]
-               [:enter :b]
-               [:enter :c]
-               [:handler]
-               [:leave :c]
-               [:leave :b]
-               [:leave :a]])))
+    (fact
+      @log =eventually=> [[:enter :a]
+                          [:enter :b]
+                          [:enter :c]
+                          [:handler]
+                          [:leave :c]
+                          [:leave :b]
+                          [:leave :a]])))
 
 (deftest async-stack-async-execute-test
   (let [log (atom [])
@@ -130,16 +130,16 @@
          (make-logging-interceptor log :c)
          (make-async-logging-handler log)]
         (sc/execute request (partial deliver response-p) fail!))
-    (fact {:timeout 100}
-      @response-p => request)
-    (fact {:timeout 100}
-      @log => [[:enter :a]
-               [:enter :b]
-               [:enter :c]
-               [:handler]
-               [:leave :c]
-               [:leave :b]
-               [:leave :a]])))
+    (fact
+      @response-p =eventually=> request)
+    (fact
+      @log =eventually=> [[:enter :a]
+                          [:enter :b]
+                          [:enter :c]
+                          [:handler]
+                          [:leave :c]
+                          [:leave :b]
+                          [:leave :a]])))
 
 (deftest async-execute-with-error-test
   (let [log (atom [])
@@ -151,16 +151,16 @@
            (swap! log conj [:handler])
            (throw error))]
         (sc/execute request fail! (partial deliver response-p)))
-    (fact {:timeout 100}
-      @response-p => error)
-    (fact {:timeout 100}
-      @log => [[:enter :a]
-               [:enter :b]
-               [:enter :c]
-               [:handler]
-               [:error :c]
-               [:error :b]
-               [:error :a]])))
+    (fact
+      @response-p =eventually=> error)
+    (fact
+      @log =eventually=> [[:enter :a]
+                          [:enter :b]
+                          [:enter :c]
+                          [:handler]
+                          [:error :c]
+                          [:error :b]
+                          [:error :a]])))
 
 (deftest async-failing-handler-test
   (let [log (atom [])]

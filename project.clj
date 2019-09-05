@@ -7,28 +7,30 @@
 
   :dependencies []
 
-  :profiles {:dev {:source-paths ["dev" "test/clj" "test/cljc"]
-                   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
-                                  ;; Add-ons:
-                                  [org.clojure/core.async "0.4.490"]
-                                  [manifold "0.1.8"]
-                                  [funcool/promesa "2.0.0-SNAPSHOT"]
-                                  ;; Dev:
-                                  [org.clojure/tools.namespace "0.2.11"]
-                                  ;; Testing:
-                                  [eftest "0.5.4"]
-                                  [metosin/testit "0.4.0-SNAPSHOT"]
-                                  ;; Perf testing:
-                                  [criterium "0.4.4"]
-                                  [io.pedestal/pedestal.interceptor "0.5.5"]
-                                  [org.slf4j/slf4j-nop "1.7.25"]]}
-             :examples {:source-paths ["examples"]}
-             :perf {:jvm-opts ^:replace ["-server" "-Xms4096m" "-Xmx4096m" "-Dclojure.compiler.direct-linking=true"]}}
+  :profiles {:dev-deps    {:dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
+                                          [org.clojure/clojurescript "1.10.520"]
+                                          ;; Add-ons:
+                                          [org.clojure/core.async "0.4.500"]
+                                          [manifold "0.1.8"]
+                                          [funcool/promesa "3.0.0"]
+                                          ;; Testing:
+                                          [metosin/testit "0.4.0"]
+                                          [lambdaisland/kaocha "0.0-529"]
+                                          [lambdaisland/kaocha-cljs "0.0-40"]
+                                          ;; Dev:
+                                          [org.clojure/tools.namespace "0.2.11"]
+                                          ;; Perf testing:
+                                          [criterium "0.4.5"]
+                                          [io.pedestal/pedestal.interceptor "0.5.7"]
+                                          [org.slf4j/slf4j-nop "1.7.28"]]}
+             :test-common [:dev-deps {:source-paths ["test/cljc"]}]
+             :test-clj    {:source-paths ["test/clj"]}
+             :test-cljs   {:source-paths ["test/cljs"]}
+             :dev         [:dev-deps {:source-paths ["dev" "test/cljc" "test/clj"]}]
+             :examples    {:source-paths ["examples"]}
+             :perf        {:jvm-opts ^:replace ["-server" "-Xms4096m" "-Xmx4096m" "-Dclojure.compiler.direct-linking=true"]}}
 
-  :plugins [[lein-eftest "0.5.4"]]
-  :eftest {:multithread? false}
-  :test-selectors {:default (constantly true)
-                   :all (constantly true)}
-
-  :aliases {"perf" ["with-profile" "default,dev,examples,perf"]
-            "perf-test" ["perf" "run" "-m" "example.perf-testing"]})
+  :aliases {"kaocha-clj"  ["with-profile" "+test-common,+test-clj" "run" "-m" "kaocha.runner"]
+            "kaocha-cljs" ["with-profile" "+test-common,+test-cljs" "run" "-m" "kaocha.runner"]
+            "perf"        ["with-profile" "default,dev,examples,perf"]
+            "perf-test"   ["perf" "run" "-m" "example.perf-testing"]})

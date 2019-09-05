@@ -15,8 +15,8 @@
     (future
       (d/success! d "foo"))
     (as/continue d (partial deliver p))
-    (fact {:timeout 100}
-      @p => "foo")))
+    (fact
+      @p =eventually=> "foo")))
 
 (deftest await-test
   (fact
