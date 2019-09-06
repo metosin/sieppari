@@ -10,7 +10,10 @@
 (defn- try-f [ctx f]
   (if f
     (try
-      (f ctx)
+      (let [ctx* (f ctx)]
+        (if (a/async? ctx*)
+          (a/catch ctx* (fn [e] (assoc ctx :error e)))
+          ctx*))
       (catch #?(:clj Exception :cljs :default) e
         (assoc ctx :error e)))
     ctx))

@@ -162,6 +162,27 @@
                           [:error :b]
                           [:error :a]])))
 
+(deftest async-execute-rejection-test
+  (let [log (atom [])
+        response-p (promise)]
+    (-> [(make-logging-interceptor log :a)
+         (make-logging-interceptor log :b)
+         (make-logging-interceptor log :c)
+         (fn [_]
+           (swap! log conj [:handler])
+           (p/rejected error))]
+        (sc/execute request fail! (partial deliver response-p)))
+    (fact
+      @response-p =eventually=> error)
+    (fact
+      @log =eventually=> [[:enter :a]
+                          [:enter :b]
+                          [:enter :c]
+                          [:handler]
+                          [:error :c]
+                          [:error :b]
+                          [:error :a]])))
+
 (deftest async-failing-handler-test
   (let [log (atom [])]
     (fact

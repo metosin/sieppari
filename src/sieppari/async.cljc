@@ -3,6 +3,7 @@
 
 (defprotocol AsyncContext
   (continue [t f])
+  (catch [c f])
   #?(:clj (await [t])))
 
 (defn async?
