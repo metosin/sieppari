@@ -13,4 +13,5 @@
 #?(:cljs
    (extend-protocol sa/AsyncContext
      js/Promise
-     (continue [this f] (p/chain this f))))
+     (continue [this f] (p/chain this f))
+     (catch [this f] (p/catch this f))))

@@ -1,13 +1,11 @@
 (ns sieppari.interceptor
-  (:require [sieppari.async :as a]))
+  (:require [sieppari.async :as a]
+            [sieppari.util :refer [exception?]]))
 
 (defrecord Interceptor [name enter leave error])
 
 (defprotocol IntoInterceptor
   (into-interceptor [t] "Given a value, produce an Interceptor Record."))
-
-(defn- exception? [e]
-  (instance? #?(:clj Exception :cljs js/Error) e))
 
 (defn- set-result [ctx response]
   (if (and (some? response) (a/async? response))

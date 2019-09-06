@@ -2,7 +2,8 @@
   (:require [clojure.test :as test :refer-macros [deftest is async]]
             [sieppari.core :as sc]
             [promesa.core :as p]
-            [sieppari.async.promesa :as scp]))
+            [sieppari.async.promesa :as scp]
+            [promesa.core :as p]))
 
 (defn make-logging-interceptor [log name]
   {:name name
@@ -11,7 +12,7 @@
    :error (fn [ctx] (swap! log conj [:error name]) ctx)})
 
 (defn make-async-logging-interceptor [log name]
-  {:name name
+      {:name name
    :enter (fn [ctx] (p/promise #(do (swap! log conj [:enter name]) (% ctx))))
    :leave (fn [ctx] (p/promise #(do (swap! log conj [:leave name]) (% ctx))))
    :error (fn [ctx] (p/promise #(do (swap! log conj [:error name]) (% ctx))))})
@@ -22,9 +23,9 @@
     request))
 
 (defn make-async-logging-handler [log]
-  (fn [request]
-    (swap! log conj [:handler])
-    (p/promise request)))
+      (fn [request]
+          (swap! log conj [:handler])
+          (p/promise request)))
 
 (def request {:foo "bar"})
 (def error (ex-info "oh no" {}))
@@ -160,6 +161,29 @@
                         (is (= response error))
                         (done)))))))
 
+(deftest promesa-async-execute-handler-rejection-test
+         (async done
+                (let [log (atom [])]
+                     (-> [(make-logging-interceptor log :a)
+                          (make-logging-interceptor log :b)
+                          (make-logging-interceptor log :c)
+                          (fn [_]
+                              (swap! log conj [:handler])
+                              (p/rejected error))]
+                         (sc/execute request
+                                     fail!
+                                     (fn [response]
+                                         (is (= @log
+                                                [[:enter :a]
+                                                 [:enter :b]
+                                                 [:enter :c]
+                                                 [:handler]
+                                                 [:error :c]
+                                                 [:error :b]
+                                                 [:error :a]]))
+                                         (is (= response error))
+                                         (done)))))))
+
 (deftest promesa-async-failing-handler-test
   (async done
     (let [log (atom [])]
@@ -167,8 +191,8 @@
            (make-logging-interceptor log :b)
            (make-logging-interceptor log :c)
            (fn [_]
-             (swap! log conj [:handler])
-             (p/resolved error))]
+               (swap! log conj [:handler])
+               (p/resolved error))]
           (sc/execute request
                       fail!
                       (fn [response]
@@ -198,8 +222,8 @@
              (make-fixing-error-b log)
              (make-logging-interceptor log :c)
              (fn [_]
-               (swap! log conj [:handler])
-               (p/resolved error))]
+                 (swap! log conj [:handler])
+                 (p/resolved error))]
 
             (sc/execute request
                         (fn [response]
