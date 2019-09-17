@@ -6,4 +6,9 @@
   manifold.deferred.Deferred
   (continue [d f] (d/chain'- nil d f))
   (catch [d f] (d/catch' d f))
+  (await [d] (deref d))
+
+  manifold.deferred.ErrorDeferred
+  (continue [d f] (d/chain'- nil d f))
+  (catch [d f] (d/catch' d f))
   (await [d] (deref d)))
