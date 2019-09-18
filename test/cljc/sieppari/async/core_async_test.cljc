@@ -23,12 +23,12 @@
 #?(:clj
    (deftest core-async-catch-clj-promise-test
      (let [respond (promise)]
-       (as/catch (a/go (Exception. "FUBAR")) (fn [_] (deliver respond "foo")))
+       (as/catch (a/go (Exception. "fubar")) (fn [_] (deliver respond "foo")))
        (is (= "foo" @respond))))
    :cljs
    (deftest core-async-catch-cljs-callback-test
      (async done
-       (is (as/continue (as/catch (a/go (js/Error. "FUBAR"))
+       (is (as/continue (as/catch (a/go (js/Error. "fubar"))
                                   (fn [_] "foo"))
                         (fn [response]
                           (is (= "foo" response))

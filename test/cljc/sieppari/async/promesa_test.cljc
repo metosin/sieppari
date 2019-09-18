@@ -34,7 +34,7 @@
        (as/catch p (fn [_] (respond "foo")))
        (is (= @respond "foo"))))
    :cljs
-   (deftest core-async-continue-cljs-callback-test
+   (deftest core-async-catch-cljs-callback-test
      (let [p (p/promise
                (fn [_ reject]
                  (p/schedule 10 #(reject (js/Error. "fubar")))))]

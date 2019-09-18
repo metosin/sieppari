@@ -31,7 +31,7 @@
   (let [p (promise)
         d (d/deferred)]
     (future
-      (d/error! d (Exception. "FUBAR")))
+      (d/error! d (Exception. "fubar")))
     (as/catch d (fn [_] (deliver p "foo")))
     (fact
       @p =eventually=> "foo")))
