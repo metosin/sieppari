@@ -12,9 +12,7 @@
 #?(:clj
    (extend-protocol AsyncContext
      clojure.lang.IDeref
-     (continue [c f] (let [p (promise)]
-                       (future (p (f @c)))
-                       p))
+     (continue [c f] (future (f @c)))
      (await [c] @c)))
 
 #?(:cljs
