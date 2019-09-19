@@ -14,13 +14,9 @@
 #?(:clj
    (extend-protocol AsyncContext
      clojure.lang.IDeref
-     (continue [c f] (let [p (promise)]
-                       (future (p (f @c)))
-                       p))
-     (catch [c f] (let [p (promise)]
-                    (future (p (let [c @c]
-                                 (if (exception? c) (f c) c))))
-                    p))
+     (continue [c f] (future (f @c)))
+     (catch [c f] (future (let [c @c]
+                            (if (exception? c) (f c) c))))
      (await [c] @c)))
 
 #?(:cljs
