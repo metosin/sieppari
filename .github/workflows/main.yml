@@ -9,5 +9,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: Install npm dependencies
+      run: npm install
+    - name: Install Clojure dependencies
+      run: lein deps
     - name: Run tests
       run: lein kaocha-cljs
