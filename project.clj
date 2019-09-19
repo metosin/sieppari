@@ -7,7 +7,7 @@
 
   :dependencies []
 
-  :profiles {:dev-deps    {:dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
+  :profiles {:dev-deps    {:dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                                           [org.clojure/clojurescript "1.10.520"]
                                           ;; Add-ons:
                                           [org.clojure/core.async "0.4.500"]
@@ -15,8 +15,8 @@
                                           [funcool/promesa "3.0.0"]
                                           ;; Testing:
                                           [metosin/testit "0.4.0"]
-                                          [lambdaisland/kaocha "0.0-529"]
-                                          [lambdaisland/kaocha-cljs "0.0-40"]
+                                          [lambdaisland/kaocha "0.0-541"]
+                                          [lambdaisland/kaocha-cljs "0.0-59"]
                                           ;; Dev:
                                           [org.clojure/tools.namespace "0.2.11"]
                                           ;; Perf testing:
