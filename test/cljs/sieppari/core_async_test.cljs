@@ -142,6 +142,29 @@
                                   (is (= response error))
                                   (done)))))))
 
+(deftest chan-async-execute-rejection-test
+         (async done
+                (let [log (atom [])]
+                     (-> [(make-logging-interceptor log :a)
+                          (make-logging-interceptor log :b)
+                          (make-logging-interceptor log :c)
+                          (fn [_]
+                              (swap! log conj [:handler])
+                              (go error))]
+                         (sc/execute request
+                                     fail!
+                                     (fn [response]
+                                         (is (= @log
+                                                [[:enter :a]
+                                                 [:enter :b]
+                                                 [:enter :c]
+                                                 [:handler]
+                                                 [:error :c]
+                                                 [:error :b]
+                                                 [:error :a]]))
+                                         (is (= response error))
+                                         (done)))))))
+
 (deftest chan-async-failing-handler-test
   (async done
          (let [log (atom [])]

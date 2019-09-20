@@ -181,6 +181,29 @@
                         (is (= response error))
                         (done)))))))
 
+(deftest native-promise-async-rejection-test
+         (async done
+                (let [log (atom [])]
+                     (-> [(make-logging-interceptor log :a)
+                          (make-logging-interceptor log :b)
+                          (make-logging-interceptor log :c)
+                          (fn [_]
+                              (swap! log conj [:handler])
+                              (js/Promise.reject error))]
+                         (sc/execute request
+                                     fail!
+                                     (fn [response]
+                                         (is (= @log
+                                                [[:enter :a]
+                                                 [:enter :b]
+                                                 [:enter :c]
+                                                 [:handler]
+                                                 [:error :c]
+                                                 [:error :b]
+                                                 [:error :a]]))
+                                         (is (= response error))
+                                         (done)))))))
+
 (deftest native-promise-async-failing-handler-b-fixes-test
   (let [make-fixing-error-b (fn [log]
                               (-> (make-async-logging-interceptor log :b)
@@ -211,22 +234,3 @@
                           (is (= response :fixed-by-b))
                           (done))
                         fail!))))))
-
-;; At the moment sieppari does not handle async error flows.
-;; We should do something about it probably.
-;;
-;; (deftest native-promise-async-rejecting-interceptor-test
-;;   (let [make-rejecting-b (fn [log]
-;;                            (-> (make-async-logging-interceptor log :b)
-;;                                (assoc :enter (fn [ctx]
-;;                                                (swap! log conj [:error :b])
-;;                                                (js/Promise.reject error)))))]
-;;     (async done
-;;       (let [log (atom [])]
-;;         (-> [(make-logging-interceptor log :a)
-;;              (make-rejecting-b log)
-;;              (make-logging-interceptor log :c)
-;;              (make-async-logging-handler log)]
-;;             (sc/execute request
-;;                         fail!
-;;                         fail!))))))

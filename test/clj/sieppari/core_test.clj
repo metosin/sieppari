@@ -15,7 +15,10 @@
     => {:foo "bar"})
   (fact
     (try-f {} (fn [_] (throw (ex-info "oh no" {}))))
-    =in=> {:error (ex-info? "oh no" {})}))
+    =in=> {:error (ex-info? "oh no" {})})
+  (fact
+    @(try-f {} (fn [_] (future (ex-info "oh no" {}))))
+    =eventually-in=> {:error (ex-info? "oh no" {})}))
 
 (def await-result #'s/await-result)
 
