@@ -12,7 +12,7 @@
                                           ;; Add-ons:
                                           [org.clojure/core.async "0.4.500"]
                                           [manifold "0.1.8"]
-                                          [funcool/promesa "3.0.0"]
+                                          [funcool/promesa "4.0.2"]
                                           ;; Testing:
                                           [metosin/testit "0.4.0"]
                                           [lambdaisland/kaocha "0.0-541"]
