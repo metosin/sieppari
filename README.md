@@ -42,7 +42,7 @@ If you are familiar with interceptors you might want to jump to `Differences to 
 
 ## Async
 
-Any step in the execution pipeline (`:enter`, `:leave`, `:error`) can return either a context map (synchronous execution) or an instance of [`AsyncContext`](https://github.com/metosin/sieppari/blob/develop/src/sieppari/async.clj) - indicating asynchronous execution.
+Any step in the execution pipeline (`:enter`, `:leave`, `:error`) can return either a context map (synchronous execution) or an instance of [`AsyncContext`](https://github.com/metosin/sieppari/blob/develop/src/sieppari/async.cljc) - indicating asynchronous execution.
 
 By default, clojure deferrables satisfy the `AsyncContext` protocol.
 
