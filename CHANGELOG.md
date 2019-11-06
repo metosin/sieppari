@@ -1,11 +1,10 @@
 # 0.0.0-alpha8 (2019-11-06)
 
-* Support `java.util.concurrent.CompletionStage` by default on the JVM.
-
+* Support `java.util.concurrent.CompletionStage` by default on the JVM and
+  `js/Promise` for ClojureScript.
+  * `sieppari.async.promesa` is not needed anymore and has been removed.
 * Catch Async Exceptions
-
-* Bumped Promesa to 2.x (thanks to by [Andrea Richiardi](https://github.com/arichiardi))
-  * Promesa allows you to choose the promise implementation, but Sieppari only supports the default `js/Promise` for now.
+* Support Promesa 4.x (thanks to by [Andrea Richiardi](https://github.com/arichiardi) and [Andrey Antukh](https://github.com/niwinz))
 * Remove automatic support for 3rd party async libs
   * Reduced `sieppari.core` load time by about 4 seconds.
   * `sieppari.async.*` namespaces now need to be `require`:d explicitly, you probably only need one of them.
