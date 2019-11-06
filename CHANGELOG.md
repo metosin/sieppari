@@ -1,4 +1,8 @@
-# Unreleased
+# 0.0.0-alpha8 (2019-11-06)
+
+* Support `java.util.concurrent.CompletionStage` by default on the JVM.
+
+* Catch Async Exceptions
 
 * Bumped Promesa to 2.x (thanks to by [Andrea Richiardi](https://github.com/arichiardi))
   * Promesa allows you to choose the promise implementation, but Sieppari only supports the default `js/Promise` for now.
