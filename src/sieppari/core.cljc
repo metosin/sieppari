@@ -61,7 +61,7 @@
     (let [error    (:error ctx)
           result   (or error (:response ctx))
           callback (if error :on-error :on-complete)
-          f        (callback ctx identity)]
+          f        (get ctx callback identity)]
       (f result))))
 
 (defn- context
