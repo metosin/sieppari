@@ -5,7 +5,7 @@
             #?(:cljs [goog.iter :as iter]))
   #?(:clj (:import (java.util Iterator))))
 
-(defrecord Context [request response error queue stack on-complete on-error])
+(defrecord Context [error queue stack on-complete on-error])
 
 (defn- try-f [ctx f]
   (if f
@@ -65,19 +65,19 @@
       (f result))))
 
 (defn- context
-  ([request queue]
-   (new Context request nil nil queue nil nil nil))
-  ([request queue on-complete on-error]
-   (new Context request nil nil queue nil on-complete on-error)))
+  ([initial-context queue]
+   (merge (new Context nil queue nil nil nil) initial-context))
+  ([initial-context queue on-complete on-error]
+   (merge (new Context nil queue nil on-complete on-error) initial-context)))
 
 ;;
 ;; Public API:
 ;;
 
-(defn execute
-  ([interceptors request on-complete on-error]
+(defn execute-ctx
+  ([interceptors initial-context on-complete on-error]
    (if-let [queue (q/into-queue interceptors)]
-     (-> (context request queue on-complete on-error)
+     (-> (context initial-context queue on-complete on-error)
          (enter)
          (leave)
          (deliver-result))
@@ -86,9 +86,16 @@
      (on-complete nil))
    nil)
   #?(:clj
-     ([interceptors request]
+     ([interceptors initial-context]
       (when-let [queue (q/into-queue interceptors)]
-        (-> (context request queue)
+        (-> (context initial-context queue)
             (enter)
             (leave)
             (await-result))))))
+
+(defn execute
+  ([interceptors request on-complete on-error]
+   (execute-ctx interceptors {:request request} on-complete on-error))
+  #?(:clj
+     ([interceptors request]
+      (execute-ctx interceptors {:request request}))))
