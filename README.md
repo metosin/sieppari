@@ -34,9 +34,16 @@ If you are familiar with interceptors you might want to jump to `Differences to 
 (defn handler [request]
   {:y (inc (:x request))})
 
+;; `sieppari/execute` takes the `:request` value as last argument
 (sieppari/execute
   [inc-x-interceptor handler]
   {:x 40})
+;=> {:y 42}
+
+;; `sieppari/execute-ctx` takes the full context as last argument
+(sieppari/execute-ctx
+  [inc-x-interceptor handler]
+  {:request {:x 40}})
 ;=> {:y 42}
 ```
 
