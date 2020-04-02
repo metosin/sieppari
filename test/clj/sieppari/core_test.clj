@@ -20,7 +20,8 @@
     @(try-f {} (fn [_] (future (ex-info "oh no" {}))))
     =eventually-in=> {:error (ex-info? "oh no" {})}))
 
-(def await-result #'s/await-result)
+(defn await-result [ctx]
+  (#'s/await-result ctx :response))
 
 (def error (RuntimeException. "kosh"))
 
