@@ -50,14 +50,14 @@
 #?(:clj
    (defn- await-result [ctx get-result]
      (if (a/async? ctx)
-       (recur (a/await ctx))
+       (recur (a/await ctx) get-result)
        (if-let [error (:error ctx)]
          (throw error)
          (get-result ctx)))))
 
 (defn- deliver-result [ctx get-result]
   (if (a/async? ctx)
-    (a/continue ctx deliver-result)
+    (a/continue ctx #(deliver-result % get-result))
     (let [error    (:error ctx)
           result   (or error (get-result ctx))
           callback (if error :on-error :on-complete)
