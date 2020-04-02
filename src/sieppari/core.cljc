@@ -48,18 +48,18 @@
                    (try-f (:enter interceptor))))))))
 
 #?(:clj
-   (defn- await-result [ctx]
+   (defn- await-result [ctx get-result]
      (if (a/async? ctx)
        (recur (a/await ctx))
        (if-let [error (:error ctx)]
          (throw error)
-         (:response ctx)))))
+         (get-result ctx)))))
 
-(defn- deliver-result [ctx]
+(defn- deliver-result [ctx get-result]
   (if (a/async? ctx)
     (a/continue ctx deliver-result)
     (let [error    (:error ctx)
-          result   (or error (:response ctx))
+          result   (or error (get-result ctx))
           callback (if error :on-error :on-complete)
           f        (get ctx callback identity)]
       (f result))))
@@ -80,7 +80,7 @@
      (-> (context initial-context queue on-complete on-error)
          (enter)
          (leave)
-         (deliver-result))
+         (deliver-result identity))
      ;; It is always necessary to call on-complete or the computation would not
      ;; keep going.
      (on-complete nil))
@@ -91,11 +91,23 @@
         (-> (context initial-context queue)
             (enter)
             (leave)
-            (await-result))))))
+            (await-result identity))))))
 
 (defn execute
   ([interceptors request on-complete on-error]
-   (execute-ctx interceptors {:request request} on-complete on-error))
+   (if-let [queue (q/into-queue interceptors)]
+     (-> (context {:request request} queue on-complete on-error)
+         (enter)
+         (leave)
+         (deliver-result :request))
+     ;; It is always necessary to call on-complete or the computation would not
+     ;; keep going.
+     (on-complete nil))
+   nil)
   #?(:clj
      ([interceptors request]
-      (execute-ctx interceptors {:request request}))))
+      (when-let [queue (q/into-queue interceptors)]
+        (-> (context {:request request} queue)
+            (enter)
+            (leave)
+            (await-result :request))))))
