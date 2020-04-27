@@ -17,7 +17,8 @@ The core _Sieppari_ depends on Clojure and nothing else.
 
 If you are new to interceptors, check the
 [Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
-If you are familiar with interceptors you might want to jump to `Differences to Pedestal` below.
+Sieppari's `sieppari.core/execute` follows a `:request` / `:response` pattern. For
+Pedestal-like behavior, use `sieppari.core/execute-context`.
 
 ## First example
 
@@ -165,11 +166,6 @@ in async case they all return `core.async` channels on enter and leave.
 * Clojure 1.9.0
 
 # Differences to Pedestal
-
-## Execution
-
-* `io.pedestal.interceptor.chain/execute` executes _Contexts_
-* `sieppari.core/execute` executes _Requests_ (which are internally wrapped inside a _Context_ for interceptors)
 
 ## Errors
 
