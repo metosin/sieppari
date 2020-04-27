@@ -75,6 +75,9 @@
 ;;
 
 (defn execute-context
+  {:arglists
+   '([interceptors ctx]
+     [interceptors ctx on-complete on-error])}
   ([interceptors ctx on-complete on-error]
    (execute-context interceptors ctx on-complete on-error remove-context-keys))
   ([interceptors ctx on-complete on-error get-result]
@@ -101,6 +104,9 @@
             (await-result get-result))))))
 
 (defn execute
+  {:arglists
+   '([interceptors request]
+     [interceptors request on-complete on-error])}
   ([interceptors request on-complete on-error]
    (execute-context interceptors {:request request} on-complete on-error :response))
   #?(:clj
