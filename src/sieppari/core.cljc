@@ -21,7 +21,7 @@
 (defn- leave [ctx]
   (if (a/async? ctx)
     (a/continue ctx leave)
-    (let [it (:stack ctx)]
+    (let [^Iterator it (:stack ctx)]
       (if (.hasNext it)
         (let [stage (if (:error ctx) :error :leave)
               f     (-> it .next stage)]
