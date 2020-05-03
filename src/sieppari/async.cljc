@@ -26,7 +26,7 @@
 
 #?(:cljs
    (extend-protocol AsyncContext
-     js/Object
+     default
      (async? [_] false)
      (continue [t f] (f t))))
 
