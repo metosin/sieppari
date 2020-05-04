@@ -189,11 +189,13 @@
         @p))
 
     ;; 36µs
+    ;; 3.8µs
     (bench!
       "sieppari: promesa (sync)"
       (s/execute s-promesa-chain {}))
 
     ;; 38µs
+    ;; 4.0µs
     (bench!
       "sieppari: promesa (async)"
       (let [p (promise)]
@@ -230,8 +232,8 @@
     ;; 20µs
     "core.async"
 
-    ;; 40µs
-    ;; 19µs
+    ;; 40µs => 4.0µs
+    ;; 19µs => 2.5µs
     "promesa"))
 
 (defn -main [& _]

@@ -1,3 +1,8 @@
+# 0.0.0-alpha9 (2020-05-04)
+
+* Fix performance regressions from previous Alphas. 
+* Tested against Promesa 5.*.
+
 # 0.0.0-alpha8 (2019-11-06)
 
 * Support `java.util.concurrent.CompletionStage` by default on the JVM and
