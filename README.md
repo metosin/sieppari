@@ -17,7 +17,7 @@ The core _Sieppari_ depends on Clojure and nothing else.
 
 If you are new to interceptors, check the
 [Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
-If you are familiar with interceptors you might want to jump to `Differences to Pedestal` below.
+If you are familiar with interceptors you might want to jump to [Differences to Pedestal](https://github.com/metosin/sieppari#differences-to-pedestal) below.
 
 ## First example
 
@@ -186,7 +186,7 @@ in async case they all return `core.async` channels on enter and leave.
 * _Pedestal_ transfers thread local bindings from call-site into async interceptors.
 * _Sieppari_ does not support this.
 
-### REPL
+# REPL
 
 In order to start a node figwheel REPL for local development use:
 
@@ -209,7 +209,7 @@ user=> (figwheel.main.api/start "dev")
 
 ## License
 
-Copyright &copy; 2018-2019 [Metosin Oy](https://www.metosin.fi/)
+Copyright &copy; 2018-2020 [Metosin Oy](https://www.metosin.fi/)
 
 Distributed under the Eclipse Public License 2.0.
 
