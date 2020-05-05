@@ -3,8 +3,7 @@
 ## CLI
 
 ```shell script
-lein kaocha-clj unit # JVM
-lein kaocha-cljs unit-cljs # cljs on node
+lein kaocha # run clj and cljs tests
 ```
 
 `kaocha-cljs` [requires](https://github.com/lambdaisland/kaocha-cljs) `ws` and `isomorphic-ws` from npm.
