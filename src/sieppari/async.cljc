@@ -6,13 +6,10 @@
                    java.util.function.Function)))
 
 (defprotocol AsyncContext
+  (async? [t])
   (continue [t f])
   (catch [c f])
   #?(:clj (await [t])))
-
-(defn async?
-  [x]
-  (satisfies? AsyncContext x))
 
 #?(:clj
    (deftype FunctionWrapper [f]
@@ -22,7 +19,21 @@
 
 #?(:clj
    (extend-protocol AsyncContext
+     Object
+     (async? [_] false)
+     (continue [t f] (f t))
+     (await [t] t)))
+
+#?(:cljs
+   (extend-protocol AsyncContext
+     default
+     (async? [_] false)
+     (continue [t f] (f t))))
+
+#?(:clj
+   (extend-protocol AsyncContext
      clojure.lang.IDeref
+     (async? [_] true)
      (continue [c f] (future (f @c)))
      (catch [c f] (future (let [c @c]
                             (if (exception? c) (f c) c))))
@@ -31,6 +42,7 @@
 #?(:clj
    (extend-protocol AsyncContext
      CompletionStage
+     (async? [_] true)
      (continue [this f]
        (.thenApply ^CompletionStage this
                    ^Function (->FunctionWrapper f)))
@@ -49,5 +61,6 @@
 #?(:cljs
    (extend-protocol AsyncContext
      js/Promise
+     (async? [_] true)
      (continue [t f] (.then t f))
      (catch [t f] (.catch t f))))

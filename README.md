@@ -167,6 +167,11 @@ in async case they all return `core.async` channels on enter and leave.
 
 # Differences to Pedestal
 
+## Execution
+
+* `io.pedestal.interceptor.chain/execute` executes _Contexts_
+* `sieppari.core/execute` executes _Requests_ (which are internally wrapped inside a _Context_ for interceptors)
+
 ## Errors
 
 * In _Pedestal_ the `error` handler takes two arguments, the `ctx` and the exception.
@@ -182,7 +187,7 @@ in async case they all return `core.async` channels on enter and leave.
 * _Pedestal_ transfers thread local bindings from call-site into async interceptors.
 * _Sieppari_ does not support this.
 
-### REPL
+# REPL
 
 In order to start a node figwheel REPL for local development use:
 
@@ -205,7 +210,7 @@ user=> (figwheel.main.api/start "dev")
 
 ## License
 
-Copyright &copy; 2018-2019 [Metosin Oy](https://www.metosin.fi/)
+Copyright &copy; 2018-2020 [Metosin Oy](https://www.metosin.fi/)
 
 Distributed under the Eclipse Public License 2.0.
 
