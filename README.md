@@ -186,23 +186,6 @@ in async case they all return `core.async` channels on enter and leave.
 * _Pedestal_ transfers thread local bindings from call-site into async interceptors.
 * _Sieppari_ does not support this.
 
-# REPL
-
-In order to start a node figwheel REPL for local development use:
-
-```shell
-clojure -A:fig:test-cljs:nrepl
-```
-
-Then in the REPL:
-
-```
-user=> (require 'figwheel.main.api)
-nil
-user=> (figwheel.main.api/start "dev")
-...
-```
-
 # Thanks
 
 * Original idea from [Pedestal Interceptors](https://github.com/pedestal/pedestal/tree/master/interceptor).

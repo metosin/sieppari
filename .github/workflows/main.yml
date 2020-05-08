@@ -14,4 +14,4 @@ jobs:
     - name: Install Clojure dependencies
       run: lein deps
     - name: Run tests
-      run: lein kaocha-cljs
+      run: lein kaocha
