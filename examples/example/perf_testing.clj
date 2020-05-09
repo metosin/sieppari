@@ -99,7 +99,7 @@
   (sq/into-queue (concat (repeat n i) [identity])))
 
 (defn create-s-mixed-chain [n i]
-  (sq/into-queue (concat (repeat (dec n) identity) [i identity])))
+  (sq/into-queue (concat (repeat (dec n) sync-interceptor) [i identity])))
 
 (defn run-simple-perf-test [n]
   (let [sync-interceptors (concat (repeat n sync-interceptor) [identity])
@@ -120,6 +120,7 @@
     (suite (str "queue of " n))
 
     ;; 8.2µs
+    ;; 8.2µs (context-api)
     (bench!
       "pedestal: sync"
       (->> p-sync-chain
@@ -128,6 +129,7 @@
            :response))
 
     ;; 99µs
+    ;; 92µs (context-api)
     (bench!
       "pedestal: core.async"
       (let [p (promise)]
@@ -138,12 +140,14 @@
 
     ;; 1.3µs
     ;; 2.1µs
+    ;; 1.2µs (context-api)
     (bench!
       "sieppari: sync (sync)"
       (s/execute s-sync-chain {}))
 
     ;; 1.3µs
     ;; 2,5µs
+    ;; 1.2µs (context-api)
     (bench!
       "sieppari: sync (async)"
       (let [p (promise)]
@@ -152,12 +156,14 @@
 
     ;; 61µs
     ;; 69µs
+    ;; 66µs (context-api)
     (bench!
       "sieppari: core.async (sync)"
       (s/execute s-async-chain {}))
 
     ;; 60µs
     ;; 65µs
+    ;; 70µs (context-api)
     (bench!
       "sieppari: core.async (async)"
       (let [p (promise)]
@@ -165,13 +171,16 @@
         @p))
 
     ;; 140µs
+    ;; 140µs (context-api)
     (bench!
       "sieppari: future (async)"
       (let [p (promise)]
         (s/execute s-future-chain {} p identity)
         @p))
 
-    ;; 84µs => 100µs
+    ;; 84µs
+    ;; 100µs
+    ;; 110µs (context-api)
     (bench!
       "sieppari: delay (async)"
       (let [p (promise)]
@@ -181,6 +190,7 @@
     ;; 84µs
     ;; 62µs (chain'-)
     ;; 89µs
+    ;; 90µs (context-api)
     (bench!
       "sieppari: deferred (sync)"
       (s/execute s-deferred-chain {}))
@@ -188,6 +198,7 @@
     ;; 84µs
     ;; 84µs (chain'-)
     ;; 150µs
+    ;; 110µs (context-api)
     (bench!
       "sieppari: deferred (async)"
       (let [p (promise)]
@@ -197,6 +208,7 @@
     ;; 36µs
     ;; 3.8µs
     ;; 5.4µs
+    ;; 3.8µs (context-api)
     (bench!
       "sieppari: promesa (sync)"
       (s/execute s-promesa-chain {}))
@@ -204,6 +216,7 @@
     ;; 38µs
     ;; 4.0µs
     ;; 5.3µs
+    ;; 4.0µs (context-api)
     (bench!
       "sieppari: promesa (async)"
       (let [p (promise)]
@@ -227,20 +240,20 @@
           (s/execute interceptors {} p identity)
           @p)))
 
-    ;; 1.8µs => 4.6µs
-    ;; 1.7µs => 4.6µs
+    ;; 1.8µs => 4.6µs => 1.8µs
+    ;; 1.7µs => 4.6µs => 1.8µs
     "identity"
 
-    ;; 93µs
-    ;; 20µs
+    ;; 93µs => 100µs
+    ;; 20µs => 18µs
     "deferred"
 
-    ;; 54µs
-    ;; 20µs
+    ;; 54µs => 73µs
+    ;; 20µs => 17µs
     "core.async"
 
-    ;; 40µs => 4.0µs => 4.4µs
-    ;; 19µs => 2.5µs => 5.0µs
+    ;; 40µs => 4.0µs => 4.4µs => 3.9µs
+    ;; 19µs => 2.5µs => 5.0µs => 2.0µs
     "promesa"))
 
 (defn -main [& _]
