@@ -264,16 +264,30 @@
       "comp"
       (chain {}))))
 
+(defn pedestal-one-async [n]
+  (let [ctx {:request {}}
+        chain (conj (conj (vec (repeat (dec n) (pi/interceptor {:enter identity}))) (pi/interceptor {:enter #(a/go %)})) (pi/interceptor identity))]
+
+    ;; 50µs
+    (bench!
+      "pedestal 9 sync + 1 async"
+      (let [p (promise)]
+        (->> (cons (make-capture-result-interceptor p) chain)
+             (pc/enqueue ctx)
+             (pc/execute))
+        @p))))
+
 (defn -main [& _]
   (run-simple-perf-test 10)
   (one-async-in-sync-pipeline-test 10)
-  (middleware-comp 10))
+  (middleware-comp 10)
+  (pedestal-one-async 10))
 
 (comment
   (run-simple-perf-test 10)
   (one-async-in-sync-pipeline-test 10)
   (middleware-comp 10)
-  (-main)
+  (pedestal-one-async 10)
 
   (do
     (require '[clj-async-profiler.core :as prof])
