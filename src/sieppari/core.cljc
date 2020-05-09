@@ -5,8 +5,8 @@
             #?(:cljs [goog.iter :as iter]))
   #?(:clj (:import (java.util Iterator))))
 
-(defrecord RawContext [error queue stack on-complete on-error])
-(defrecord Context [request response error queue stack on-complete on-error])
+(defrecord Context [error queue stack on-complete on-error])
+(defrecord RequestResponseContext [request response error queue stack on-complete on-error])
 
 (defn- try-f [ctx f]
   (if f
@@ -65,11 +65,11 @@
           f (callback ctx identity)]
       (f result))))
 
-(defn- context
+(defn- request-response-context
   ([request queue]
-   (new Context request nil nil queue nil nil nil))
+   (new RequestResponseContext request nil nil queue nil nil nil))
   ([request queue on-complete on-error]
-   (new Context request nil nil queue nil on-complete on-error)))
+   (new RequestResponseContext request nil nil queue nil on-complete on-error)))
 
 (defn- remove-context-keys [ctx]
   (str ctx) (dissoc ctx :error :queue :stack :on-complete :on-error))
@@ -87,7 +87,7 @@
   ([interceptors ctx on-complete on-error get-result]
    (if-let [queue (q/into-queue interceptors)]
      (-> (assoc ctx :queue queue :on-complete on-complete :on-error on-error)
-         (map->RawContext)
+         (map->Context)
          (enter)
          (leave)
          (deliver-result get-result))
@@ -102,7 +102,7 @@
      ([interceptors ctx get-result]
       (when-let [queue (q/into-queue interceptors)]
         (-> (assoc ctx :queue queue)
-            (map->RawContext)
+            (map->Context)
             (enter)
             (leave)
             (await-result get-result))))))
@@ -113,7 +113,7 @@
      [interceptors request on-complete on-error])}
   ([interceptors request on-complete on-error]
    (if-let [queue (q/into-queue interceptors)]
-     (-> (context request queue on-complete on-error)
+     (-> (request-response-context request queue on-complete on-error)
          (enter)
          (leave)
          (deliver-result :response))
@@ -124,7 +124,7 @@
   #?(:clj
      ([interceptors request]
       (when-let [queue (q/into-queue interceptors)]
-        (-> (context request queue)
+        (-> (request-response-context request queue)
             (enter)
             (leave)
             (await-result :response))))))
