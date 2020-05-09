@@ -228,9 +228,9 @@
   (doseq [[name chain] [[(str "homogeneous queue of " n) create-s-chain]
                         [(str "queue of " (dec n) " sync + 1 async step") create-s-mixed-chain]]
           :let [_ (suite name)]
-          [name interceptor] [["identity" identity]
-                              ["deferred" deferred-interceptor]
-                              ["core.async" async-interceptor]
+          [name interceptor] [["identity" sync-interceptor]
+                              #_["deferred" deferred-interceptor]
+                              #_["core.async" async-interceptor]
                               ["promesa" promesa-interceptor]]]
 
     (let [interceptors (chain n interceptor)]
@@ -240,8 +240,8 @@
           (s/execute interceptors {} p identity)
           @p)))
 
-    ;; 1.8µs => 4.6µs => 1.8µs
-    ;; 1.7µs => 4.6µs => 1.8µs
+    ;; 1.8µs => 4.6µs => 1.8µs => 1.3µs
+    ;; 1.7µs => 4.6µs => 1.8µs => 1.4µs
     "identity"
 
     ;; 93µs => 100µs
@@ -252,8 +252,8 @@
     ;; 20µs => 17µs
     "core.async"
 
-    ;; 40µs => 4.0µs => 4.4µs => 3.9µs
-    ;; 19µs => 2.5µs => 5.0µs => 2.0µs
+    ;; 40µs => 4.0µs => 4.4µs => 3.9µs => 3.3µs
+    ;; 19µs => 2.5µs => 5.0µs => 2.0µs => 1.8µs
     "promesa"))
 
 (defn middleware-comp [n]

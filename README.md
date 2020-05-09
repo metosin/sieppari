@@ -193,7 +193,8 @@ Executing a chain of 10 interceptors, which have `:enter` of `clojure.core/ident
 * **core.async**: all step return the ctx in a `core.async` channel
 * **manifold**: all step return the ctx in a `manifold.deferred.Deferred`
 
-All numbers are execution time lower quantile.
+All numbers are execution time lower quantile (not testing the goodness of the async libraries
+, just the execution overhead sippari interceptors adds)
 
 | Executor          | sync   | promesa | core.async | manifold |
 | ----------------- | -------|---------|------------|----------|
@@ -208,8 +209,8 @@ All numbers are execution time lower quantile.
 **NOTE**: running async flows without interceptors is still much faster,
 e.g. synchronous `manifold` chain is much faster than via interceptors.
 
-**NOTE**: Plan is to add an Java-backed and optimized chain compiler into Sieppari, 
-making static synchronous chains on par with middleware chain / `comp`.
+**NOTE**: Goal is to have a Java-backed and optimized chain compiler into Sieppari,
+initial tests show it will be near the perf of middleware chain / `comp`.
 
 # Differences to Pedestal
 
