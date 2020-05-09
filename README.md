@@ -95,6 +95,7 @@ Blocking on async computation:
 Any step can return a `java.util.concurrent.CompletionStage` or `js/promise`, Sieppari works oob with libraries like [Promesa](http://funcool.github.io/promesa/latest):
 
 ```clj
+;; [funcool/promesa "5.1.0"]`
 (require '[promesa.core :as p])
 
 (def chain
@@ -159,23 +160,6 @@ Requires dependency to `[manifold "0.1.8"]` or higher.
   [inc-x-interceptor (minus-x-interceptor 10) handler]
   {:x 40})
 ;=> {:y 31}
-```
-
-## promesa
-
-Requires dependency to `[funcool/promesa "2.0.0-SNAPSHOT"]` or higher.
-
-```clj
-(require '[promesa.core :as p])
-
-(defn divide-x-interceptor [n]
-  {:enter (fn [ctx]
-            (p/promise (update-in ctx [:request :x] / n)))})
-
-(s/execute
-  [inc-x-interceptor (divide-x-interceptor 10) handler]
-  {:x 40})
-;=> {:y 41/10}
 ```
 
 # Performance
