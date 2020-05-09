@@ -137,11 +137,13 @@
         @p))
 
     ;; 1.3µs
+    ;; 2.1µs
     (bench!
       "sieppari: sync (sync)"
       (s/execute s-sync-chain {}))
 
     ;; 1.3µs
+    ;; 2,5µs
     (bench!
       "sieppari: sync (async)"
       (let [p (promise)]
@@ -149,11 +151,13 @@
         @p))
 
     ;; 61µs
+    ;; 69µs
     (bench!
       "sieppari: core.async (sync)"
       (s/execute s-async-chain {}))
 
     ;; 60µs
+    ;; 65µs
     (bench!
       "sieppari: core.async (async)"
       (let [p (promise)]
@@ -167,7 +171,7 @@
         (s/execute s-future-chain {} p identity)
         @p))
 
-    ;; 84µs
+    ;; 84µs => 100µs
     (bench!
       "sieppari: delay (async)"
       (let [p (promise)]
@@ -176,12 +180,14 @@
 
     ;; 84µs
     ;; 62µs (chain'-)
+    ;; 89µs
     (bench!
       "sieppari: deferred (sync)"
       (s/execute s-deferred-chain {}))
 
     ;; 84µs
     ;; 84µs (chain'-)
+    ;; 150µs
     (bench!
       "sieppari: deferred (async)"
       (let [p (promise)]
@@ -190,18 +196,19 @@
 
     ;; 36µs
     ;; 3.8µs
+    ;; 5.4µs
     (bench!
       "sieppari: promesa (sync)"
       (s/execute s-promesa-chain {}))
 
     ;; 38µs
     ;; 4.0µs
+    ;; 5.3µs
     (bench!
       "sieppari: promesa (async)"
       (let [p (promise)]
         (s/execute s-promesa-chain {} p identity)
-        @p))
-    ))
+        @p))))
 
 (defn one-async-in-sync-pipeline-test [n]
 
@@ -220,8 +227,8 @@
           (s/execute interceptors {} p identity)
           @p)))
 
-    ;; 1.8µs
-    ;; 1.7µs
+    ;; 1.8µs => 4.6µs
+    ;; 1.7µs => 4.6µs
     "identity"
 
     ;; 93µs
@@ -232,8 +239,8 @@
     ;; 20µs
     "core.async"
 
-    ;; 40µs => 4.0µs
-    ;; 19µs => 2.5µs
+    ;; 40µs => 4.0µs => 4.4µs
+    ;; 19µs => 2.5µs => 5.0µs
     "promesa"))
 
 (defn -main [& _]
