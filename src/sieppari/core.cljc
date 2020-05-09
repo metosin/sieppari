@@ -72,7 +72,7 @@
    (new RequestResponseContext request nil nil queue nil on-complete on-error)))
 
 (defn- remove-context-keys [ctx]
-  (str ctx) (dissoc ctx :error :queue :stack :on-complete :on-error))
+  (dissoc ctx :error :queue :stack :on-complete :on-error))
 
 ;;
 ;; Public API:
