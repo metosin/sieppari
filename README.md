@@ -149,21 +149,31 @@ _Sieppari_ aims for minimal functionality and can therefore be
 quite fast. Complete example to test performance is
 [included](https://github.com/metosin/sieppari/blob/develop/examples/example/perf_testing.clj).
 
-The example creates a chain of 100 interceptors that have
-`clojure.core/identity` as `:enter` and `:leave` functions and then
-executes the chain. The async tests also have 100 interceptors, but
-in async case they all return `core.async` channels on enter and leave.
+## Silly numbers
 
-| Executor          | Execution time lower quantile |
-| ----------------- | ----------------------------- |
-| Pedestal sync     |  64 µs                        |
-| Sieppari sync     |   9 µs                        |
-| Pedestal async    | 410 µs                        |
-| Sieppari async    | 396 µs                        |
+Executing a chain of 10 interceptors, which have `:enter` of `clojure.core/identity`.
+
+* **sync**: all steps return the ctx
+* **promesa**: all steps return the ctx in an `promesa.core/promise`
+* **core.async**: all step return the ctx in a `core.async` channel
+* **manifold**: all step return the ctx in a `manifold.deferred.Deferred`
+
+All numbers are execution time lower quantile.
+
+| Executor          | sync   | promesa | core.async | manifold |
+| ----------------- | -------|---------|------------|----------|
+| Pedestal          | 8.2µs  |         | 92µs       |          |
+| Sieppari          | 1.2µs  |  4.0µs  | 70µs       | 110µs    |
 
 * MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
 * Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
 * Clojure 1.9.0
+
+**NOTE**: running async flows without interceptors is still much faster,
+e.g. synchronous `manifold` chain is much faster than via interceptors.
+
+Plan is to add an Java-backed and optimized chain compiler into Sieppari, 
+making static synchronous chains on par with `clojure.core/comp`.
 
 # Differences to Pedestal
 
