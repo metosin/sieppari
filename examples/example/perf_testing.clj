@@ -250,4 +250,16 @@
 (comment
   (run-simple-perf-test 10)
   (one-async-in-sync-pipeline-test 10)
-  (-main))
+  (-main)
+
+  (do
+    (require '[clj-async-profiler.core :as prof])
+    (prof/serve-files 8080))
+
+  (time
+    (prof/profile
+      (let [interceptors (create-s-chain 10 identity)]
+        (dotimes [_ 3000000]
+          (let [p (promise)]
+            (s/execute interceptors {} p identity)
+            @p))))))
