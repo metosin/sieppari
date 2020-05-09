@@ -26,23 +26,23 @@
 
 (deftest wait-result-core-async-test
   (facts "response"
-    (await-result {:response :ctx}) => :ctx
-    (await-result (a/go {:response :ctx})) => :ctx
-    (await-result (a/go (a/go {:response :ctx}))) => :ctx)
+    (await-result {:response :ctx} :response) => :ctx
+    (await-result (a/go {:response :ctx}) :response) => :ctx
+    (await-result (a/go (a/go {:response :ctx})) :response) => :ctx)
   (facts "error"
-    (await-result {:error error}) =throws=> error
-    (await-result (a/go {:error error})) =throws=> error
-    (await-result (a/go (a/go {:error error}))) =throws=> error))
+    (await-result {:error error} :response) =throws=> error
+    (await-result (a/go {:error error}) :response) =throws=> error
+    (await-result (a/go (a/go {:error error})) :response) =throws=> error))
 
 (deftest wait-result-deref-test
   (facts "response"
-    (await-result {:response :ctx}) => :ctx
-    (await-result (future {:response :ctx})) => :ctx
-    (await-result (future (future {:response :ctx}))) => :ctx)
+    (await-result {:response :ctx} :response) => :ctx
+    (await-result (future {:response :ctx}) :response) => :ctx
+    (await-result (future (future {:response :ctx})) :response) => :ctx)
   (facts "exception"
-    (await-result {:error error}) =throws=> error
-    (await-result (future {:error error})) =throws=> error
-    (await-result (future (future {:error error}))) =throws=> error))
+    (await-result {:error error} :response) =throws=> error
+    (await-result (future {:error error}) :response) =throws=> error
+    (await-result (future (future {:error error})) :response) =throws=> error))
 
 (def deliver-result #'s/deliver-result)
 
@@ -52,34 +52,39 @@
   (let [p (promise)]
     (deliver-result {:response :r
                      :on-complete p
-                     :on-error fail!})
+                     :on-error fail!}
+                    :response)
     (fact
       @p =eventually=> :r))
 
   (let [p (promise)]
     (deliver-result {:error (ex-info "oh no" {})
                      :on-complete fail!
-                     :on-error p})
+                     :on-error p}
+                    :response)
     (fact
       @p =eventually=> (ex-info? "oh no" {})))
 
   (let [p (promise)]
     (deliver-result (a/go {:response :r
                            :on-complete p
-                           :on-error fail!}))
+                           :on-error fail!})
+                    :response)
     (fact
       @p =eventually=> :r))
 
   (let [p (promise)]
     (deliver-result (a/go {:error (ex-info "oh no" {})
                            :on-complete fail!
-                           :on-error p}))
+                           :on-error p})
+                    :response)
     (fact
       @p =eventually=> (ex-info? "oh no" {})))
 
   (let [p (promise)]
     (deliver-result (future (a/go {:response :r
                                    :on-complete p
-                                   :on-error fail!})))
+                                   :on-error fail!}))
+                    :response)
     (fact
       @p =eventually=> :r)))

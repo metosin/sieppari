@@ -68,6 +68,24 @@
     (fact
       response => request)))
 
+(deftest execute-context-setup-async-test-test
+  (let [log (atom [])
+        response (-> [(make-async-logging-interceptor log :a)
+                      (make-async-logging-interceptor log :b)
+                      (make-async-logging-interceptor log :c)
+                      (make-async-logging-handler log)]
+                     (sc/execute-context {:request request}))]
+    (fact
+     @log => [[:enter :a]
+              [:enter :b]
+              [:enter :c]
+              [:handler]
+              [:leave :c]
+              [:leave :b]
+              [:leave :a]])
+    (fact
+     (:response response) => request)))
+
 (deftest async-b-sync-execute-test
   (let [log (atom [])
         response (-> [(make-logging-interceptor log :a)

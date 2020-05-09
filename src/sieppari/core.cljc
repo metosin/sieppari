@@ -5,7 +5,7 @@
             #?(:cljs [goog.iter :as iter]))
   #?(:clj (:import (java.util Iterator))))
 
-(defrecord Context [request response error queue stack on-complete on-error])
+(defrecord Context [error queue stack on-complete on-error])
 
 (defn- try-f [ctx f]
   (if f
@@ -44,51 +44,71 @@
                    (assoc :queue (pop queue))
                    (assoc :stack #?(:clj  (conj stack interceptor)
                                     :cljs (doto (or stack (array))
-                                                (.unshift interceptor))))
+                                            (.unshift interceptor))))
                    (try-f (:enter interceptor))))))))
 
 #?(:clj
-   (defn- await-result [ctx]
+   (defn- await-result [ctx get-result]
      (if (a/async? ctx)
-       (recur (a/await ctx))
+       (recur (a/await ctx) get-result)
        (if-let [error (:error ctx)]
          (throw error)
-         (:response ctx)))))
+         (get-result ctx)))))
 
-(defn- deliver-result [ctx]
+(defn- deliver-result [ctx get-result]
   (if (a/async? ctx)
-    (a/continue ctx deliver-result)
+    (a/continue ctx #(deliver-result % get-result))
     (let [error    (:error ctx)
-          result   (or error (:response ctx))
+          result   (or error (get-result ctx))
           callback (if error :on-error :on-complete)
           f        (callback ctx identity)]
       (f result))))
 
-(defn- context
-  ([request queue]
-   (new Context request nil nil queue nil nil nil))
-  ([request queue on-complete on-error]
-   (new Context request nil nil queue nil on-complete on-error)))
+(defn- context [m]
+  (map->Context m))
+
+(defn- remove-context-keys [ctx]
+  (dissoc ctx :error :queue :stack :on-complete :on-error))
 
 ;;
 ;; Public API:
 ;;
 
-(defn execute
-  ([interceptors request on-complete on-error]
+(defn execute-context
+  {:arglists
+   '([interceptors ctx]
+     [interceptors ctx on-complete on-error])}
+  ([interceptors ctx on-complete on-error]
+   (execute-context interceptors ctx on-complete on-error remove-context-keys))
+  ([interceptors ctx on-complete on-error get-result]
    (if-let [queue (q/into-queue interceptors)]
-     (-> (context request queue on-complete on-error)
+     (-> (assoc ctx :queue queue :on-complete on-complete :on-error on-error)
+         (context)
          (enter)
          (leave)
-         (deliver-result))
+         (deliver-result get-result))
      ;; It is always necessary to call on-complete or the computation would not
      ;; keep going.
      (on-complete nil))
    nil)
   #?(:clj
-     ([interceptors request]
+     ([interceptors ctx]
+      (execute-context interceptors ctx remove-context-keys)))
+  #?(:clj
+     ([interceptors ctx get-result]
       (when-let [queue (q/into-queue interceptors)]
-        (-> (context request queue)
+        (-> (assoc ctx :queue queue)
+            (context)
             (enter)
             (leave)
-            (await-result))))))
+            (await-result get-result))))))
+
+(defn execute
+  {:arglists
+   '([interceptors request]
+     [interceptors request on-complete on-error])}
+  ([interceptors request on-complete on-error]
+   (execute-context interceptors {:request request} on-complete on-error :response))
+  #?(:clj
+     ([interceptors request]
+      (execute-context interceptors {:request request} :response))))
