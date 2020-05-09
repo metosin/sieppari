@@ -256,13 +256,23 @@
     ;; 19µs => 2.5µs => 5.0µs => 2.0µs
     "promesa"))
 
+(defn middleware-comp [n]
+  (let [chain (apply comp (repeat n identity))]
+
+    ;; 105ns
+    (bench!
+      "comp"
+      (chain {}))))
+
 (defn -main [& _]
   (run-simple-perf-test 10)
-  (one-async-in-sync-pipeline-test 10))
+  (one-async-in-sync-pipeline-test 10)
+  (middleware-comp 10))
 
 (comment
   (run-simple-perf-test 10)
   (one-async-in-sync-pipeline-test 10)
+  (middleware-comp 10)
   (-main)
 
   (do
