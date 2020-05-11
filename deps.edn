@@ -1,0 +1,4 @@
+;; Do *not* add deps, aliases etc. here. Use the existing project.clj instead
+;; this is for the sole purpose of exposing sieppari's git coords for tools.deps projects
+
+{:paths ["src"]}
