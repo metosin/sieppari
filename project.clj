@@ -21,6 +21,7 @@
                                        [org.clojure/tools.namespace "1.0.0"]
                                        ;; Perf testing:
                                        [criterium "0.4.5"]
+                                       [com.clojure-goes-fast/clj-async-profiler "0.5.0-SNAPSHOT"]
                                        [io.pedestal/pedestal.interceptor "0.5.7"]
                                        [org.slf4j/slf4j-nop "1.7.30"]]}
 

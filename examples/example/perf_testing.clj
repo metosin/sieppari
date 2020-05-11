@@ -99,7 +99,7 @@
   (sq/into-queue (concat (repeat n i) [identity])))
 
 (defn create-s-mixed-chain [n i]
-  (sq/into-queue (concat (repeat (dec n) identity) [i identity])))
+  (sq/into-queue (concat (repeat (dec n) sync-interceptor) [i identity])))
 
 (defn run-simple-perf-test [n]
   (let [sync-interceptors (concat (repeat n sync-interceptor) [identity])
@@ -120,6 +120,7 @@
     (suite (str "queue of " n))
 
     ;; 8.2µs
+    ;; 8.2µs (context-api)
     (bench!
       "pedestal: sync"
       (->> p-sync-chain
@@ -128,6 +129,7 @@
            :response))
 
     ;; 99µs
+    ;; 92µs (context-api)
     (bench!
       "pedestal: core.async"
       (let [p (promise)]
@@ -137,11 +139,15 @@
         @p))
 
     ;; 1.3µs
+    ;; 2.1µs
+    ;; 1.2µs (context-api)
     (bench!
       "sieppari: sync (sync)"
       (s/execute s-sync-chain {}))
 
     ;; 1.3µs
+    ;; 2,5µs
+    ;; 1.2µs (context-api)
     (bench!
       "sieppari: sync (async)"
       (let [p (promise)]
@@ -149,11 +155,15 @@
         @p))
 
     ;; 61µs
+    ;; 69µs
+    ;; 66µs (context-api)
     (bench!
       "sieppari: core.async (sync)"
       (s/execute s-async-chain {}))
 
     ;; 60µs
+    ;; 65µs
+    ;; 70µs (context-api)
     (bench!
       "sieppari: core.async (async)"
       (let [p (promise)]
@@ -161,6 +171,7 @@
         @p))
 
     ;; 140µs
+    ;; 140µs (context-api)
     (bench!
       "sieppari: future (async)"
       (let [p (promise)]
@@ -168,6 +179,8 @@
         @p))
 
     ;; 84µs
+    ;; 100µs
+    ;; 110µs (context-api)
     (bench!
       "sieppari: delay (async)"
       (let [p (promise)]
@@ -176,12 +189,16 @@
 
     ;; 84µs
     ;; 62µs (chain'-)
+    ;; 89µs
+    ;; 90µs (context-api)
     (bench!
       "sieppari: deferred (sync)"
       (s/execute s-deferred-chain {}))
 
     ;; 84µs
     ;; 84µs (chain'-)
+    ;; 150µs
+    ;; 110µs (context-api)
     (bench!
       "sieppari: deferred (async)"
       (let [p (promise)]
@@ -190,27 +207,30 @@
 
     ;; 36µs
     ;; 3.8µs
+    ;; 5.4µs
+    ;; 3.8µs (context-api)
     (bench!
       "sieppari: promesa (sync)"
       (s/execute s-promesa-chain {}))
 
     ;; 38µs
     ;; 4.0µs
+    ;; 5.3µs
+    ;; 4.0µs (context-api)
     (bench!
       "sieppari: promesa (async)"
       (let [p (promise)]
         (s/execute s-promesa-chain {} p identity)
-        @p))
-    ))
+        @p))))
 
 (defn one-async-in-sync-pipeline-test [n]
 
   (doseq [[name chain] [[(str "homogeneous queue of " n) create-s-chain]
                         [(str "queue of " (dec n) " sync + 1 async step") create-s-mixed-chain]]
           :let [_ (suite name)]
-          [name interceptor] [["identity" identity]
-                              ["deferred" deferred-interceptor]
-                              ["core.async" async-interceptor]
+          [name interceptor] [["identity" sync-interceptor]
+                              #_["deferred" deferred-interceptor]
+                              #_["core.async" async-interceptor]
                               ["promesa" promesa-interceptor]]]
 
     (let [interceptors (chain n interceptor)]
@@ -220,27 +240,63 @@
           (s/execute interceptors {} p identity)
           @p)))
 
-    ;; 1.8µs
-    ;; 1.7µs
+    ;; 1.8µs => 4.6µs => 1.8µs => 1.3µs
+    ;; 1.7µs => 4.6µs => 1.8µs => 1.4µs
     "identity"
 
-    ;; 93µs
-    ;; 20µs
+    ;; 93µs => 100µs
+    ;; 20µs => 18µs
     "deferred"
 
-    ;; 54µs
-    ;; 20µs
+    ;; 54µs => 73µs
+    ;; 20µs => 17µs
     "core.async"
 
-    ;; 40µs => 4.0µs
-    ;; 19µs => 2.5µs
+    ;; 40µs => 4.0µs => 4.4µs => 3.9µs => 3.3µs
+    ;; 19µs => 2.5µs => 5.0µs => 2.0µs => 1.8µs
     "promesa"))
+
+(defn middleware-comp [n]
+  (let [chain (apply comp (repeat n identity))]
+
+    ;; 105ns
+    (bench!
+      "comp"
+      (chain {}))))
+
+(defn pedestal-one-async [n]
+  (let [ctx {:request {}}
+        chain (conj (conj (vec (repeat (dec n) (pi/interceptor {:enter identity}))) (pi/interceptor {:enter #(a/go %)})) (pi/interceptor identity))]
+
+    ;; 50µs
+    (bench!
+      "pedestal 9 sync + 1 async"
+      (let [p (promise)]
+        (->> (cons (make-capture-result-interceptor p) chain)
+             (pc/enqueue ctx)
+             (pc/execute))
+        @p))))
 
 (defn -main [& _]
   (run-simple-perf-test 10)
-  (one-async-in-sync-pipeline-test 10))
+  (one-async-in-sync-pipeline-test 10)
+  (middleware-comp 10)
+  (pedestal-one-async 10))
 
 (comment
   (run-simple-perf-test 10)
   (one-async-in-sync-pipeline-test 10)
-  (-main))
+  (middleware-comp 10)
+  (pedestal-one-async 10)
+
+  (do
+    (require '[clj-async-profiler.core :as prof])
+    (prof/serve-files 8080))
+
+  (time
+    (prof/profile
+      (let [interceptors (create-s-chain 10 identity)]
+        (dotimes [_ 3000000]
+          (let [p (promise)]
+            (s/execute interceptors {} p identity)
+            @p))))))

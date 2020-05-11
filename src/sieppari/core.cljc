@@ -6,6 +6,7 @@
   #?(:clj (:import (java.util Iterator))))
 
 (defrecord Context [error queue stack on-complete on-error])
+(defrecord RequestResponseContext [request response error queue stack on-complete on-error])
 
 (defn- try-f [ctx f]
   (if f
@@ -24,7 +25,7 @@
     (let [^Iterator it (:stack ctx)]
       (if (.hasNext it)
         (let [stage (if (:error ctx) :error :leave)
-              f     (-> it .next stage)]
+              f (-> it .next stage)]
           (recur (try-f ctx f)))
         ctx))))
 
@@ -35,8 +36,8 @@
 (defn- enter [ctx]
   (if (a/async? ctx)
     (a/continue ctx enter)
-    (let [queue       (:queue ctx)
-          stack       (:stack ctx)
+    (let [queue (:queue ctx)
+          stack (:stack ctx)
           interceptor (peek queue)]
       (if (or (not interceptor) (:error ctx))
         (assoc ctx :stack (iter stack))
@@ -58,14 +59,17 @@
 (defn- deliver-result [ctx get-result]
   (if (a/async? ctx)
     (a/continue ctx #(deliver-result % get-result))
-    (let [error    (:error ctx)
-          result   (or error (get-result ctx))
+    (let [error (:error ctx)
+          result (or error (get-result ctx))
           callback (if error :on-error :on-complete)
-          f        (callback ctx identity)]
+          f (callback ctx identity)]
       (f result))))
 
-(defn- context [m]
-  (map->Context m))
+(defn- request-response-context
+  ([request queue]
+   (new RequestResponseContext request nil nil queue nil nil nil))
+  ([request queue on-complete on-error]
+   (new RequestResponseContext request nil nil queue nil on-complete on-error)))
 
 (defn- remove-context-keys [ctx]
   (dissoc ctx :error :queue :stack :on-complete :on-error))
@@ -83,7 +87,7 @@
   ([interceptors ctx on-complete on-error get-result]
    (if-let [queue (q/into-queue interceptors)]
      (-> (assoc ctx :queue queue :on-complete on-complete :on-error on-error)
-         (context)
+         (map->Context)
          (enter)
          (leave)
          (deliver-result get-result))
@@ -98,7 +102,7 @@
      ([interceptors ctx get-result]
       (when-let [queue (q/into-queue interceptors)]
         (-> (assoc ctx :queue queue)
-            (context)
+            (map->Context)
             (enter)
             (leave)
             (await-result get-result))))))
@@ -108,7 +112,19 @@
    '([interceptors request]
      [interceptors request on-complete on-error])}
   ([interceptors request on-complete on-error]
-   (execute-context interceptors {:request request} on-complete on-error :response))
+   (if-let [queue (q/into-queue interceptors)]
+     (-> (request-response-context request queue on-complete on-error)
+         (enter)
+         (leave)
+         (deliver-result :response))
+     ;; It is always necessary to call on-complete or the computation would not
+     ;; keep going.
+     (on-complete nil))
+   nil)
   #?(:clj
      ([interceptors request]
-      (execute-context interceptors {:request request} :response))))
+      (when-let [queue (q/into-queue interceptors)]
+        (-> (request-response-context request queue)
+            (enter)
+            (leave)
+            (await-result :response))))))

@@ -24,18 +24,17 @@ Pedestal-like behavior, use `sieppari.core/execute-context`.
 
 ```clj
 (ns example.simple
-  (:require [sieppari.core :as sieppari]))
+  (:require [sieppari.core :as s]))
 
 ;; interceptor, in enter update value in `[:request :x]` with `inc`
 (def inc-x-interceptor
-  {:enter (fn [ctx]
-            (update-in ctx [:request :x] inc))})
+  {:enter (fn [ctx] (update-in ctx [:request :x] inc))})
 
 ;; handler, take `:x` from request, apply `inc`, and return an map with `:y`
 (defn handler [request]
   {:y (inc (:x request))})
 
-(sieppari/execute
+(s/execute
   [inc-x-interceptor handler]
   {:x 40})
 ;=> {:y 42}
@@ -45,9 +44,9 @@ Pedestal-like behavior, use `sieppari.core/execute-context`.
 
 Any step in the execution pipeline (`:enter`, `:leave`, `:error`) can return either a context map (synchronous execution) or an instance of [`AsyncContext`](https://github.com/metosin/sieppari/blob/develop/src/sieppari/async.cljc) - indicating asynchronous execution.
 
-By default, clojure deferrables satisfy the `AsyncContext` protocol.
+By default, clojure deferrables, `java.util.concurrent.CompletionStage` and `js/promise` satisfy the `AsyncContext` protocol.
 
-Using `sieppari.core/execute` with async steps will block:
+Using `s/execute` with async steps will block:
 
 ```clj
 ;; async interceptor, in enter double value of `[:response :y]`:
@@ -58,19 +57,31 @@ Using `sieppari.core/execute` with async steps will block:
               (update-in ctx [:response :y] * 2)))})
 
 
-(sieppari/execute
+(s/execute
   [inc-x-interceptor multiply-y-interceptor handler]
   {:x 40})
 ; ... 1 second later:
 ;=> {:y 84}
 ```
 
-There is also a non-blocking version of `execute`:
+Using non-blocking version of `s/execute`:
+
+```clj
+(s/execute
+  [inc-x-interceptor multiply-y-interceptor handler]
+  {:x 40}
+  (partial println "SUCCESS:")
+  (partial println "FAILURE:"))
+; => nil
+; prints "SUCCESS: {:y 84}" 1sec later
+```
+
+Blocking on async computation:
 
 ```clj
 (let [respond (promise)
       raise (promise)]
-  (sieppari/execute
+  (s/execute
     [inc-x-interceptor multiply-y-interceptor handler]
     {:x 40}
     respond
@@ -81,6 +92,32 @@ There is also a non-blocking version of `execute`:
 ;=> {:y 84}
 ```
 
+Any step can return a `java.util.concurrent.CompletionStage` or `js/promise`, Sieppari works oob with libraries like [Promesa](http://funcool.github.io/promesa/latest):
+
+```clj
+;; [funcool/promesa "5.1.0"]`
+(require '[promesa.core :as p])
+
+(def chain
+  [{:enter #(update-in % [:request :x] inc)}               ;; 1
+   {:leave #(p/promise (update-in % [:response :x] / 10))} ;; 4
+   {:enter #(p/delay 1000 %)}                              ;; 2
+   identity])                                              ;; 3
+
+;; blocking
+(s/execute chain {:x 40})
+; => {:x 41/10} after after 1sec
+
+;; non-blocking
+(s/execute
+  chain
+  {:x 40}
+  (partial println "SUCCESS:")
+  (partial println "SUCCESS:"))
+; => nil
+;; prints "SUCCESS: {:x 41/10}" after 1sec
+```
+
 ## External Async Libraries
 
 To add a support for one of the supported external async libraries, just add a dependency to them and `require` the
@@ -88,7 +125,6 @@ respective Sieppari namespace. Currently supported async libraries are:
 
 * [core.async](https://github.com/clojure/core.async) - `sieppari.async.core-async`, clj & cljs
 * [Manifold](https://github.com/ztellman/manifold) - `sieppari.async.manifold` clj
-* [Promesa](http://funcool.github.io/promesa/latest) - `sieppari.async.promesa` clj & cljs
 
 To extend Sieppari async support to other libraries, just extend the `AsyncContext` protocol.
 
@@ -103,7 +139,7 @@ Requires dependency to `[org.clojure/core.async "0.4.474"]` or higher.
   {:enter (fn [ctx]
             (a/go (update-in ctx [:request :x] * n)))})
 
-(sieppari/execute
+(s/execute
   [inc-x-interceptor (multiply-x-interceptor 10) handler]
   {:x 40})
 ;=> {:y 411}
@@ -120,27 +156,10 @@ Requires dependency to `[manifold "0.1.8"]` or higher.
   {:enter (fn [ctx]
             (d/success-deferred (update-in ctx [:request :x] - n)))})
 
-(sieppari/execute
+(s/execute
   [inc-x-interceptor (minus-x-interceptor 10) handler]
   {:x 40})
 ;=> {:y 31}
-```
-
-## promesa
-
-Requires dependency to `[funcool/promesa "2.0.0-SNAPSHOT"]` or higher.
-
-```clj
-(require '[promesa.core :as p])
-
-(defn divide-x-interceptor [n]
-  {:enter (fn [ctx]
-            (p/promise (update-in ctx [:request :x] / n)))})
-
-(sieppari/execute
-  [inc-x-interceptor (divide-x-interceptor 10) handler]
-  {:x 40})
-;=> {:y 41/10}
 ```
 
 # Performance
@@ -149,21 +168,33 @@ _Sieppari_ aims for minimal functionality and can therefore be
 quite fast. Complete example to test performance is
 [included](https://github.com/metosin/sieppari/blob/develop/examples/example/perf_testing.clj).
 
-The example creates a chain of 100 interceptors that have
-`clojure.core/identity` as `:enter` and `:leave` functions and then
-executes the chain. The async tests also have 100 interceptors, but
-in async case they all return `core.async` channels on enter and leave.
+## Silly numbers
 
-| Executor          | Execution time lower quantile |
-| ----------------- | ----------------------------- |
-| Pedestal sync     |  64 µs                        |
-| Sieppari sync     |   9 µs                        |
-| Pedestal async    | 410 µs                        |
-| Sieppari async    | 396 µs                        |
+Executing a chain of 10 interceptors, which have `:enter` of `clojure.core/identity`.
+
+* **sync**: all steps return the ctx
+* **promesa**: all steps return the ctx in an `promesa.core/promise`
+* **core.async**: all step return the ctx in a `core.async` channel
+* **manifold**: all step return the ctx in a `manifold.deferred.Deferred`
+
+All numbers are execution time lower quantile (not testing the goodness of the async libraries
+, just the execution overhead sippari interceptors adds)
+
+| Executor          | sync   | promesa | core.async | manifold |
+| ----------------- | -------|---------|------------|----------|
+| Pedestal          | 8.2µs  |  -      | 92µs       | -        |
+| Sieppari          | 1.2µs  |  4.0µs  | 70µs       | 110µs    |
+| Middleware (comp) | 0.1µs  |  -      | -          | -        |
 
 * MacBook Pro (Retina, 15-inch, Mid 2015), 2.5 GHz Intel Core i7, 16 MB RAM
 * Java(TM) SE Runtime Environment (build 1.8.0_151-b12)
 * Clojure 1.9.0
+
+**NOTE**: running async flows without interceptors is still much faster,
+e.g. synchronous `manifold` chain is much faster than via interceptors.
+
+**NOTE**: Goal is to have a Java-backed and optimized chain compiler into Sieppari,
+initial tests show it will be near the perf of middleware chain / `comp`.
 
 # Differences to Pedestal
 
