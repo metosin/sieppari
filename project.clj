@@ -26,6 +26,7 @@
 
              ;; needed because of https://github.com/lambdaisland/kaocha-cljs#known-issues
              :test-cljs {:source-paths ["test/cljc" "test/cljs"]}
+             :test {:source-paths ["test/cljc" "test/clj"]}
 
              :dev [:dev-deps {:source-paths ["dev"]}]
              :examples {:source-paths ["examples"]}

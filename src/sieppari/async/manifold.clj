@@ -5,12 +5,27 @@
 (extend-protocol sa/AsyncContext
   manifold.deferred.Deferred
   (async? [_] true)
-  (continue [d f] (d/chain'- nil d f))
-  (catch [d f] (d/catch' d f))
+  (continue [d old-ctx f]
+    (if (d/realized? d)
+      (if-some [s (d/success-value d nil)]
+        (f s)
+        (let [e (d/error-value d nil)]
+          (assert e)
+          (f (assoc old-ctx :error e))))
+      (d/on-realized d
+                     #(do #_(tap> %) (f %))
+                     #(f (assoc old-ctx :error %)))))
   (await [d] (deref d))
-
   manifold.deferred.ErrorDeferred
   (async? [_] true)
-  (continue [d f] (d/chain'- nil d f))
-  (catch [d f] (d/catch' d f))
+  (continue [d old-ctx f]
+    (if (d/realized? d)
+      (if-some [s (d/success-value d nil)]
+        (f s)
+        (let [e (d/error-value d nil)]
+          (assert e)
+          (f (assoc old-ctx :error e))))
+      (d/on-realized d
+                     #(do #_(tap> %) (f %))
+                     #(f (assoc old-ctx :error %)))))
   (await [d] (deref d)))

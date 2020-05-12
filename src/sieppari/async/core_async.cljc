@@ -9,7 +9,10 @@
   #?(:clj clojure.core.async.impl.protocols.Channel
      :cljs cljs.core.async.impl.channels/ManyToManyChannel)
   (async? [_] true)
-  (continue [c f] (go (f (cca/<! c))))
-  (catch [c f] (go (let [c (cca/<! c)]
-                     (if (exception? c) (f c) c))))
+  (continue [c old-ctx f]
+    (cca/take! c
+               (fn [x]
+                 (if (exception? x)
+                   (f (assoc old-ctx :error x))
+                   (f x)))))
   #?(:clj (await [c] (<!! c))))

@@ -4,8 +4,10 @@
             [sieppari.core :as s]
             [clojure.core.async :as a]))
 
-(def try-f #'s/try-f)
+(def try-f-inine #'s/try-f)
 
+(defn try-f [a b]
+  (try-f-inine a b identity))
 (deftest try-f-test
   (fact
     (try-f {} nil)
@@ -20,7 +22,9 @@
     @(try-f {} (fn [_] (future (ex-info "oh no" {}))))
     =eventually-in=> {:error (ex-info? "oh no" {})}))
 
-(def await-result #'s/await-result)
+(def inlineawait #'s/await-result)
+(defn await-result [in pf]
+  (pf (inlineawait in)))
 
 (def error (RuntimeException. "kosh"))
 
@@ -44,11 +48,11 @@
     (await-result (future {:error error}) :response) =throws=> error
     (await-result (future (future {:error error})) :response) =throws=> error))
 
-(def deliver-result #'s/deliver-result)
+#_(def deliver-result #'s/deliver-result)
 
 (defn fail! [_] (throw (ex-info "should never get here" {})))
 
-(deftest deliver-result-test
+#_(deftest deliver-result-test
   (let [p (promise)]
     (deliver-result {:response :r
                      :on-complete p

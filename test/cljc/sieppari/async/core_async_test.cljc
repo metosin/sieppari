@@ -10,12 +10,13 @@
 #?(:clj
    (deftest core-async-continue-clj-promise-test
      (let [respond (promise)]
-       (as/continue (a/go "foo") (partial deliver respond))
+       (as/continue (a/go "foo") {} (partial deliver respond))
        (is (= "foo" @respond))))
    :cljs
    (deftest core-async-continue-cljs-callback-test
      (async done
        (is (as/continue (a/go "foo")
+                        {}
                         (fn [response]
                           (is (= "foo" response))
                           (done)))))))
@@ -23,13 +24,15 @@
 #?(:clj
    (deftest core-async-catch-clj-promise-test
      (let [respond (promise)]
-       (as/catch (a/go (Exception. "fubar")) (fn [_] (deliver respond "foo")))
+       (as/continue (a/go (Exception. "fubar")) {} (fn [_] (deliver respond "foo")))
        (is (= "foo" @respond))))
    :cljs
    (deftest core-async-catch-cljs-callback-test
      (async done
-       (is (as/continue (as/catch (a/go (js/Error. "fubar"))
+       (is (as/continue (as/continue (a/go (js/Error. "fubar"))
+                                     {}
                                   (fn [_] "foo"))
+                        {}
                         (fn [response]
                           (is (= "foo" response))
                           (done)))))))

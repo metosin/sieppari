@@ -18,6 +18,8 @@
 
 (defn make-logging-handler [log]
   (fn [request]
+    #_(tap> :handler)
+    #_(tap> request)
     (swap! log conj [:handler])
     request))
 
