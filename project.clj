@@ -8,9 +8,9 @@
   :dependencies []
 
   :profiles {:dev-deps {:dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
-                                       [org.clojure/clojurescript "1.10.520"]
+                                       [org.clojure/clojurescript "1.10.758"]
                                        ;; Add-ons:
-                                       [org.clojure/core.async "1.1.587"]
+                                       [org.clojure/core.async "1.2.598"]
                                        [manifold "0.1.8"]
                                        [funcool/promesa "5.1.0"]
                                        ;; Testing:

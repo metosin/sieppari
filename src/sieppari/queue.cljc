@@ -5,7 +5,7 @@
   (into-queue [t]))
 
 (def empty-queue
-  #?(:clj clojure.lang.PersistentQueue/EMPTY
+  #?(:clj  clojure.lang.PersistentQueue/EMPTY
      :cljs #queue []))
 
 (defn- into-queue*

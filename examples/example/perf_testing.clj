@@ -60,16 +60,16 @@
     "manifold: future"
     @(d/chain'
        {}
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)
-       #(d/future %)))
+       d/future
+       d/future
+       d/future
+       d/future
+       d/future
+       d/future
+       d/future
+       d/future
+       d/future
+       d/future))
 
   ; 3.5µs
   ; 1.5µs (chain')
@@ -77,16 +77,16 @@
     "manifold: success-deferred"
     @(d/chain'
        {}
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %)
-       #(d/success-deferred %))))
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       d/success-deferred
+       success-deferred)))
 
 (def sync-interceptor {:enter identity})
 (def async-interceptor {:enter #(a/go %)})

@@ -23,12 +23,11 @@
     (assoc ctx :queue (q/into-queue (concat interceptors (:queue ctx))))))
 
 ; TODO: figure out how enqueue should work? Should enqueue add interceptors just
-#_
-(defn enqueue
-  "Adds interceptor or seq of interceptors to the end of context's execution queue. Creates
-  the queue if necessary. Returns updated context."
-  [ctx interceptor-or-interceptors]
-  (let [interceptors (into-interceptors (if (sequential? interceptor-or-interceptors)
-                                          interceptor-or-interceptors
-                                          [interceptor-or-interceptors]))]
-    (update ctx :queue (fnil into PersistentQueue/EMPTY) interceptors)))
+#_(defn enqueue
+    "Adds interceptor or seq of interceptors to the end of context's execution queue. Creates
+    the queue if necessary. Returns updated context."
+    [ctx interceptor-or-interceptors]
+    (let [interceptors (into-interceptors (if (sequential? interceptor-or-interceptors)
+                                            interceptor-or-interceptors
+                                            [interceptor-or-interceptors]))]
+      (update ctx :queue (fnil into PersistentQueue/EMPTY) interceptors)))
