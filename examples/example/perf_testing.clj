@@ -120,6 +120,7 @@
     (suite (str "queue of " n))
 
     ;; 8.2µs
+    ;;baseline 11.03µs
     (bench!
       "pedestal: sync"
       (->> p-sync-chain
@@ -128,6 +129,7 @@
            :response))
 
     ;; 99µs
+    ;;baseline 124.10µs
     (bench!
       "pedestal: core.async"
       (let [p (promise)]
@@ -137,11 +139,15 @@
         @p))
 
     ;; 1.3µs
+    ; baseline 3.12µs
+    ;3.4
     (bench!
       "sieppari: sync (sync)"
       (s/execute s-sync-chain {}))
 
     ;; 1.3µs
+    ;baseline 3.46µs
+    ;3.6
     (bench!
       "sieppari: sync (async)"
       (let [p (promise)]
@@ -149,11 +155,15 @@
         @p))
 
     ;; 61µs
+    ;;baseline  78.13µs
+    ;;59.90µs
     (bench!
       "sieppari: core.async (sync)"
       (s/execute s-async-chain {}))
 
     ;; 60µs
+    ;;baseline  89.38µs
+    ;;59.18µs
     (bench!
       "sieppari: core.async (async)"
       (let [p (promise)]
@@ -161,6 +171,8 @@
         @p))
 
     ;; 140µs
+    ;baseline 186.33µs
+    ;68.83µs
     (bench!
       "sieppari: future (async)"
       (let [p (promise)]
@@ -168,6 +180,8 @@
         @p))
 
     ;; 84µs
+    ;baseline  171.79µs
+    ; 27.79µs
     (bench!
       "sieppari: delay (async)"
       (let [p (promise)]
@@ -176,12 +190,16 @@
 
     ;; 84µs
     ;; 62µs (chain'-)
+    ;;baseline   111.90µs
+    ;;  28.77µs
     (bench!
       "sieppari: deferred (sync)"
       (s/execute s-deferred-chain {}))
 
     ;; 84µs
     ;; 84µs (chain'-)
+    ;;baseline 131.95µs
+    ; 26.16µs
     (bench!
       "sieppari: deferred (async)"
       (let [p (promise)]
@@ -190,12 +208,15 @@
 
     ;; 36µs
     ;; 3.8µs
+    ;;baseline  5.67µs
     (bench!
       "sieppari: promesa (sync)"
       (s/execute s-promesa-chain {}))
 
     ;; 38µs
     ;; 4.0µs
+    ;baseline 5.13µs
+    ;4.72µs
     (bench!
       "sieppari: promesa (async)"
       (let [p (promise)]
@@ -222,18 +243,26 @@
 
     ;; 1.8µs
     ;; 1.7µs
+    ;baseline  5.75µs
+    ;6.17µs
     "identity"
 
     ;; 93µs
     ;; 20µs
+    ;baseline  29.13µs
+    ;18.25µs
     "deferred"
 
     ;; 54µs
     ;; 20µs
+    ;baseline 32.04µs
+    ;22.34µs
     "core.async"
 
     ;; 40µs => 4.0µs
     ;; 19µs => 2.5µs
+    ;baseline 6.02µs
+    ; 5.96µs
     "promesa"))
 
 (defn -main [& _]
