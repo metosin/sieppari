@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as s]
+            [sieppari.async.core-async]
             [clojure.core.async :as a]))
 
 (def try-f #'s/try-f)

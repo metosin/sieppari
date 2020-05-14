@@ -6,6 +6,7 @@
   :lein-release {:deploy-via :clojars}
 
   :dependencies []
+  :test-paths ["test/clj" "test/cljs" "test/cljc"]
 
   :profiles {:dev-deps {:dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                                        [org.clojure/clojurescript "1.10.758"]
@@ -32,6 +33,6 @@
              :examples {:source-paths ["examples"]}
              :perf {:jvm-opts ^:replace ["-server" "-Xms4096m" "-Xmx4096m" "-Dclojure.compiler.direct-linking=true"]}}
 
-  :aliases {"kaocha" ["with-profile" "+dev-deps,+test-cljs" "run" "-m" "kaocha.runner"]
+  :aliases {"kaocha" ["with-profile" "+dev-deps,+test-cljs" "run" "-m" "kaocha.runner" "--reporter" "kaocha.report/documentation"]
             "perf" ["with-profile" "default,dev,examples,perf"]
             "perf-test" ["perf" "run" "-m" "example.perf-testing"]})

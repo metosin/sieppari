@@ -1,5 +1,5 @@
 (ns sieppari.async.promesa-test
-  (:require [clojure.test :as test #?(:clj :refer :cljs :refer-macros) [deftest is #?(:cljs async)]]
+  (:require [clojure.test :refer [deftest is #?(:cljs async)]]
             [sieppari.async :as as]
             [promesa.core :as p]
             [promesa.exec :as px]))

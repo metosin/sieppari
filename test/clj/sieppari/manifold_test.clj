@@ -5,13 +5,13 @@
             [manifold.deferred :as d]))
 
 (defn make-logging-interceptor [log name]
-  {:name  name
+  {:name name
    :enter (fn [ctx] (swap! log conj [:enter name]) ctx)
    :leave (fn [ctx] (swap! log conj [:leave name]) ctx)
    :error (fn [ctx] (swap! log conj [:error name]) ctx)})
 
 (defn make-async-logging-interceptor [log name]
-  {:name  name
+  {:name name
    :enter (fn [ctx] (swap! log conj [:enter name]) (d/success-deferred ctx))
    :leave (fn [ctx] (swap! log conj [:leave name]) (d/success-deferred ctx))
    :error (fn [ctx] (swap! log conj [:error name]) (d/success-deferred ctx))})

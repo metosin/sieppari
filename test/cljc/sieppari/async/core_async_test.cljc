@@ -1,5 +1,5 @@
 (ns sieppari.async.core-async-test
-  (:require [clojure.test :as test #?(:clj :refer :cljs :refer-macros) [deftest is #?(:cljs async)]]
+  (:require [clojure.test :refer [deftest is #?(:cljs async)]]
             [sieppari.async :as as]
             [sieppari.async.core-async]
             [clojure.core.async :as a]))

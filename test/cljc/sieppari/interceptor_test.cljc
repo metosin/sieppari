@@ -1,5 +1,5 @@
 (ns sieppari.interceptor-test
-  (:require [clojure.test :as test #?(:clj :refer :cljs :refer-macros) [deftest is testing]]
+  (:require [clojure.test :refer [deftest is testing]]
             [sieppari.interceptor :as si])
   #?(:clj (:import (sieppari.interceptor Interceptor))))
 

@@ -5,13 +5,13 @@
             [promesa.core :as p]))
 
 (defn make-logging-interceptor [log name]
-  {:name  name
+  {:name name
    :enter (fn [ctx] (swap! log conj [:enter name]) ctx)
    :leave (fn [ctx] (swap! log conj [:leave name]) ctx)
    :error (fn [ctx] (swap! log conj [:error name]) ctx)})
 
 (defn make-async-logging-interceptor [log name]
-  {:name  name
+  {:name name
    :enter (fn [ctx] (swap! log conj [:enter name]) (p/promise ctx))
    :leave (fn [ctx] (swap! log conj [:leave name]) (p/promise ctx))
    :error (fn [ctx] (swap! log conj [:error name]) (p/promise ctx))})

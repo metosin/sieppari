@@ -5,13 +5,13 @@
             [clojure.core.async :refer [go <! <!!]]))
 
 (defn make-logging-interceptor [log name]
-  {:name  name
+  {:name name
    :enter (fn [ctx] (swap! log conj [:enter name]) ctx)
    :leave (fn [ctx] (swap! log conj [:leave name]) ctx)
    :error (fn [ctx] (swap! log conj [:error name]) ctx)})
 
 (defn make-async-logging-interceptor [log name]
-  {:name  name
+  {:name name
    :enter (fn [ctx] (swap! log conj [:enter name]) (go ctx))
    :leave (fn [ctx] (swap! log conj [:leave name]) (go ctx))
    :error (fn [ctx] (swap! log conj [:error name]) (go ctx))})
@@ -76,15 +76,15 @@
                       (make-async-logging-handler log)]
                      (sc/execute-context {:request request}))]
     (fact
-     @log => [[:enter :a]
-              [:enter :b]
-              [:enter :c]
-              [:handler]
-              [:leave :c]
-              [:leave :b]
-              [:leave :a]])
+      @log => [[:enter :a]
+               [:enter :b]
+               [:enter :c]
+               [:handler]
+               [:leave :c]
+               [:leave :b]
+               [:leave :a]])
     (fact
-     (:response response) => request)))
+      (:response response) => request)))
 
 (deftest async-b-sync-execute-test
   (let [log (atom [])
