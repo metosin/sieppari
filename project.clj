@@ -1,4 +1,4 @@
-(defproject metosin/sieppari "0.0.0-alpha9"
+(defproject metosin/sieppari "0.0.0-alpha10"
   :description "Small, fast, and complete interceptor library."
   :url "https://github.com/metosin/sieppari"
   :license {:name "Eclipse Public License", :url "https://www.eclipse.org/legal/epl-2.0/"}
@@ -11,12 +11,12 @@
   :profiles {:dev-deps {:dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                                        [org.clojure/clojurescript "1.10.758"]
                                        ;; Add-ons:
-                                       [org.clojure/core.async "1.2.598"]
+                                       [org.clojure/core.async "1.2.603"]
                                        [manifold "0.1.8"]
                                        [funcool/promesa "5.1.0"]
                                        ;; Testing:
                                        [metosin/testit "0.4.0"]
-                                       [lambdaisland/kaocha "1.0.629"]
+                                       [lambdaisland/kaocha "1.0.632"]
                                        [lambdaisland/kaocha-cljs "0.0-71"]
                                        ;; Dev:
                                        [org.clojure/tools.namespace "1.0.0"]

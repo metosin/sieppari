@@ -1,3 +1,8 @@
+# 0.0.0-alpha10 (2020-05-15)
+
+* Fail nicely (throw or return error) for unsupported Contexts.
+   * e.g. returning a `core.async` channel without enabling it's support by requiring `sieppari.async.core-async`
+
 # 0.0.0-alpha9 (2020-05-04)
 
 * Fix performance regressions from previous Alphas. 
