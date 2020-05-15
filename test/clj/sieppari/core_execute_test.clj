@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [testit.core :refer :all]
             [sieppari.core :as s]
-            [sieppari.context :as sc]))
+            [sieppari.context :as sc]
+            [clojure.string :as str]))
 
 ;;
 ;; Following tests use a test-chain that has some interceptors
@@ -286,3 +287,20 @@
           [:leave :c]
           [:leave :a]]))
 
+(defrecord UnsupportedContext [])
+
+(defn invalid-context-class-exception? [e]
+  (-> e .getMessage (str/starts-with? "Unsupported Context on :enter")))
+
+(deftest invalid-context-test
+
+  (fact "fails on sync"
+    (s/execute [{:enter map->UnsupportedContext}] {:x 40})
+    =throws=> invalid-context-class-exception?)
+
+  (testing "async"
+    (let [on-error (promise)]
+      (s/execute [{:enter map->UnsupportedContext}] {:x 40} ::irrelevant on-error)
+
+      (fact "responds failure"
+        @on-error => invalid-context-class-exception?))))
