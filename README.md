@@ -1,4 +1,5 @@
-# sieppari
+# sieppari [![cljdoc badge](https://cljdoc.org/badge/metosin/sieppari)](https://cljdoc.org/d/metosin/sieppari/CURRENT)
+
 
 Small, fast, and complete interceptor library for Clojure/Script with built-in support
 for common async libraries.
