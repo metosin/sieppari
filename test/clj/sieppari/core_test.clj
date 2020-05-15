@@ -49,43 +49,35 @@
 
 (defn fail! [_] (throw (ex-info "should never get here" {})))
 
+(let [p (promise)]
+  (deliver-result {:response :r} :response p fail!)
+  (fact
+    @p =eventually=> :r))
+
 (deftest deliver-result-test
   (let [p (promise)]
-    (deliver-result {:response :r
-                     :on-complete p
-                     :on-error fail!}
-                    :response)
+    (deliver-result {:response :r} :response p fail!)
     (fact
-      @p =eventually=> :r))
+      @p =eventually=> :r))(let [p (promise)]
+                                 (deliver-result {:response :r} :response p fail!)
+                                 (fact @p =eventually=> :r))
 
   (let [p (promise)]
-    (deliver-result {:error (ex-info "oh no" {})
-                     :on-complete fail!
-                     :on-error p}
-                    :response)
-    (fact
-      @p =eventually=> (ex-info? "oh no" {})))
+    (deliver-result {:response :r} :response p fail!)
+    (fact @p =eventually=> :r))
 
   (let [p (promise)]
-    (deliver-result (a/go {:response :r
-                           :on-complete p
-                           :on-error fail!})
-                    :response)
-    (fact
-      @p =eventually=> :r))
+    (deliver-result {:error (ex-info "oh no" {})} :response fail! p)
+    (fact @p =eventually=> (ex-info? "oh no" {})))
 
   (let [p (promise)]
-    (deliver-result (a/go {:error (ex-info "oh no" {})
-                           :on-complete fail!
-                           :on-error p})
-                    :response)
-    (fact
-      @p =eventually=> (ex-info? "oh no" {})))
+    (deliver-result (a/go {:response :r}) :response p fail!)
+    (fact @p =eventually=> :r))
 
   (let [p (promise)]
-    (deliver-result (future (a/go {:response :r
-                                   :on-complete p
-                                   :on-error fail!}))
-                    :response)
-    (fact
-      @p =eventually=> :r)))
+    (deliver-result (a/go {:error (ex-info "oh no" {})}) :response fail! p)
+    (fact @p =eventually=> (ex-info? "oh no" {})))
+
+  (let [p (promise)]
+    (deliver-result (future (a/go {:response :r})) :response p fail!)
+    (fact @p =eventually=> :r)))

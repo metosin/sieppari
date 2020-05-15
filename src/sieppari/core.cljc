@@ -6,11 +6,11 @@
             #?(:cljs [goog.iter :as iter]))
   #?(:clj (:import (java.util Iterator))))
 
-(defrecord Context [error queue stack on-complete on-error]
+(defrecord Context [error queue stack]
   c/Context
   (context? [_] true))
 
-(defrecord RequestResponseContext [request response error queue stack on-complete on-error]
+(defrecord RequestResponseContext [request response error queue stack]
   c/Context
   (context? [_] true))
 
@@ -70,23 +70,16 @@
          (throw error)
          (get-result ctx)))))
 
-(defn- deliver-result [ctx get-result]
+(defn- deliver-result [ctx get-result on-complete on-error]
   (if (a/async? ctx)
-    (a/continue ctx #(deliver-result % get-result))
+    (a/continue ctx #(deliver-result % get-result on-complete on-error))
     (let [error (:error ctx)
           result (or error (get-result ctx))
-          callback (if error :on-error :on-complete)
-          f (callback ctx identity)]
-      (f result))))
-
-(defn- request-response-context
-  ([request queue]
-   (new RequestResponseContext request nil nil queue nil nil nil))
-  ([request queue on-complete on-error]
-   (new RequestResponseContext request nil nil queue nil on-complete on-error)))
+          callback (if error on-error on-complete)]
+      (callback result))))
 
 (defn- remove-context-keys [ctx]
-  (dissoc ctx :error :queue :stack :on-complete :on-error))
+  (dissoc ctx :error :queue :stack))
 
 ;;
 ;; Public API:
@@ -101,14 +94,12 @@
   ([interceptors ctx on-complete on-error get-result]
    (if-let [queue (q/into-queue interceptors)]
      (try
-       (-> (assoc ctx :queue queue :on-complete on-complete :on-error on-error)
+       (-> (assoc ctx :queue queue)
            (map->Context)
            (enter)
            (leave)
-           (deliver-result get-result))
+           (deliver-result get-result on-complete on-error))
        (catch #?(:clj Exception :cljs js/Error) e (on-error e)))
-     ;; It is always necessary to call on-complete or the computation would not
-     ;; keep going.
      (on-complete nil))
    nil)
   #?(:clj
@@ -130,19 +121,17 @@
   ([interceptors request on-complete on-error]
    (if-let [queue (q/into-queue interceptors)]
      (try
-       (-> (request-response-context request queue on-complete on-error)
+       (-> (new RequestResponseContext request nil nil queue nil)
            (enter)
            (leave)
-           (deliver-result :response))
+           (deliver-result :response on-complete on-error))
        (catch #?(:clj Exception :cljs js/Error) e (on-error e)))
-     ;; It is always necessary to call on-complete or the computation would not
-     ;; keep going.
      (on-complete nil))
    nil)
   #?(:clj
      ([interceptors request]
       (when-let [queue (q/into-queue interceptors)]
-        (-> (request-response-context request queue)
+        (-> (new RequestResponseContext request nil nil queue nil)
             (enter)
             (leave)
             (await-result :response))))))
