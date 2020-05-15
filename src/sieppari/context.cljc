@@ -1,6 +1,28 @@
 (ns sieppari.context
   (:require [sieppari.queue :as q]))
 
+(defprotocol Context
+  (context? [this]))
+
+(extend-protocol Context
+  #?(:clj  clojure.lang.PersistentHashMap
+     :cljs cljs.core.PersistentHashMap)
+  (context? [_] true)
+
+  #?(:clj  clojure.lang.PersistentArrayMap
+     :cljs cljs.core.PersistentArrayMap)
+  (context? [_] true))
+
+#?(:clj
+   (extend-protocol Context
+     Object
+     (context? [_] false)))
+
+#?(:cljs
+   (extend-protocol Context
+     default
+     (context? [_] false)))
+
 (defn terminate
   "Removes all remaining interceptors from context's execution queue.
   This effectively short-circuits execution of Interceptors' :enter

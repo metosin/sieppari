@@ -5,7 +5,7 @@
             [sieppari.async.core-async]
             [clojure.core.async :as a]))
 
-(def try-f #'s/try-f)
+(def try-f #'s/-try)
 
 (deftest try-f-test
   (fact
