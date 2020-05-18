@@ -1,3 +1,7 @@
+# 0.0.0-alpha11 (2020-05-18)
+
+* rebuild without dependencies
+
 # 0.0.0-alpha10 (2020-05-15)
 
 * Fail nicely (throw or return error) for unsupported Contexts.
