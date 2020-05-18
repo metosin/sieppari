@@ -1,6 +1,8 @@
+# 0.0.0-alpha13 (2020-05-18)
+# 0.0.0-alpha12 (2020-05-18)
 # 0.0.0-alpha11 (2020-05-18)
 
-* rebuild without dependencies
+* rebuild without dev-dependencies.
 
 # 0.0.0-alpha10 (2020-05-15)
 
