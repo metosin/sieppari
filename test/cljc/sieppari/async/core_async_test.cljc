@@ -29,11 +29,12 @@
    :cljs
    (deftest core-async-catch-cljs-callback-test
      (async done
-       (is (as/continue (a/go (js/Error. "fubar"))
-                        {}
-                        (fn [response]
-                          (is (= "foo" response))
-                          (done)))))))
+       (let [err (js/Error. "fubar")]
+         (is (as/continue (a/go err)
+                          {}
+                          (fn [response]
+                            (is (= {:error err} response))
+                            (done))))))))
 
 #?(:clj
    (deftest await-test

@@ -61,4 +61,5 @@
      (continue [t ctx f]
        (-> t
            (.then f)
-           (.then  (fn [e] (f (assoc ctx :error e))))))))
+           (.catch  (fn [e]
+                      (f (assoc ctx :error e))))))))

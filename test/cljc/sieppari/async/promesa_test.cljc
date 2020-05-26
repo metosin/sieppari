@@ -35,14 +35,15 @@
        (is (= @respond "foo"))))
    :cljs
    (deftest core-async-catch-cljs-callback-test
-     (let [p (p/create
+     (let [err (js/Error. "fubar")
+           p (p/create
                (fn [_ reject]
-                 (px/schedule! 10 #(reject (js/Error. "fubar")))))]
+                 (px/schedule! 10 #(reject err))))]
        (async done
          (is (as/continue p
                           nil
                           (fn [response]
-                            (is (= "foo" response))
+                            (is (= {:error err} response))
                             (done))))))))
 
 #?(:clj
