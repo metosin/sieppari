@@ -28,10 +28,11 @@
    (extend-protocol AsyncContext
      clojure.lang.IDeref
      (async? [_] true)
-     (continue [c ctx f] (let [c @c]
-                               (if (exception? c)
-                                 (f (assoc ctx :error c))
-                                 (f c))))
+     (continue [c ctx f]
+       (future (let [c @c]
+                 (if (exception? c)
+                   (f (assoc ctx :error c))
+                   (f c)))))
      (await [c] @c)))
 
 #?(:clj
