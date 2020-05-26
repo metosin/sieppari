@@ -3,7 +3,9 @@
   (:require [sieppari.util :refer [exception?]])
   #?(:clj (:import java.util.concurrent.CompletionStage
                    java.util.concurrent.CompletionException
-                   java.util.function.Function)))
+                   java.util.function.Function
+                   (java.util.concurrent Future)
+                   (clojure.lang Delay))))
 
 (defprotocol AsyncContext
   (async? [t])
@@ -32,7 +34,15 @@
 
 #?(:clj
    (extend-protocol AsyncContext
-     clojure.lang.IDeref
+     Future
+     (async? [_] true)
+     (continue [c f] (future (f @c)))
+     (catch [c f] (future (let [c @c]
+                            (if (exception? c) (f c) c))))
+     (await [c] @c)))
+#?(:clj
+   (extend-protocol AsyncContext
+     Delay
      (async? [_] true)
      (continue [c f] (future (f @c)))
      (catch [c f] (future (let [c @c]
