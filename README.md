@@ -114,7 +114,7 @@ Any step can return a `java.util.concurrent.CompletionStage` or `js/promise`, Si
   chain
   {:x 40}
   (partial println "SUCCESS:")
-  (partial println "SUCCESS:"))
+  (partial println "FAILURE:"))
 ; => nil
 ;; prints "SUCCESS: {:x 41/10}" after 1sec
 ```
