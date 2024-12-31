@@ -17,7 +17,7 @@ with minimal implementation and optimal performance.
 The core _Sieppari_ depends on Clojure and nothing else.
 
 If you are new to interceptors, check the
-[Pedestal Interceptors documentation](http://pedestal.io/reference/interceptors).
+[Pedestal Interceptors documentation](http://pedestal.io/pedestal/0.7/reference/interceptors.html).
 Sieppari's `sieppari.core/execute` follows a `:request` / `:response` pattern. For
 Pedestal-like behavior, use `sieppari.core/execute-context`.
 
