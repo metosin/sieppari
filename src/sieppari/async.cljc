@@ -12,12 +12,6 @@
   #?(:clj (await [t])))
 
 #?(:clj
-   (deftype FunctionWrapper [f]
-     Function
-     (apply [_ v]
-       (f v))))
-
-#?(:clj
    (extend-protocol AsyncContext
      Object
      (async? [_] false)
@@ -45,15 +39,19 @@
      (async? [_] true)
      (continue [this f]
        (.thenApply ^CompletionStage this
-                   ^Function (->FunctionWrapper f)))
+                   ^Function (reify Function
+                               (apply [_ v]
+                                 (f v)))))
 
      (catch [this f]
        (letfn [(handler [e]
-                  (if (instance? CompletionException e)
+                 (if (instance? CompletionException e)
                    (f (.getCause ^Exception e))
                    (f e)))]
          (.exceptionally ^CompletionStage this
-                         ^Function (->FunctionWrapper handler))))
+                         ^Function (reify Function
+                                     (apply [_ v]
+                                       (handler v))))))
 
      (await [this]
        (deref this))))
